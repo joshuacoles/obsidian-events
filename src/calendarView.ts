@@ -6,8 +6,10 @@ import listPlugin from '@fullcalendar/list';
 import {App, TFile, Notice} from 'obsidian';
 import type {Moment} from 'moment';
 
+type Granularity = "day" | "week" | "month" | "quarter" | "year";
+
 interface PeriodicNotesPlugin {
-	openPeriodicNote(granularity: "day" | "week" | "month" | "quarter" | "year", date: Moment, opts?: any): Promise<void>;
+	openPeriodicNote(granularity: Granularity, date: Moment, opts?: any): Promise<void>;
 }
 
 export class CalendarView {
