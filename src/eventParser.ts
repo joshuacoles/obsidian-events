@@ -1,5 +1,18 @@
 import {Vault, TFile, App} from 'obsidian';
 import { CalendarEvent, EventFileFormat } from './types';
+import { z } from 'zod';
+
+// Define the Zod schema for event file validation
+const eventFileSchema = z.object({
+    startTime: z.string().refine((val) => !isNaN(Date.parse(val)), {
+        message: "startTime must be a valid ISO8601 date string"
+    }),
+    endTime: z.string().refine((val) => !isNaN(Date.parse(val)), {
+        message: "endTime must be a valid ISO8601 date string"
+    }).optional(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+});
 
 export class EventParser {
     /**
@@ -53,51 +66,20 @@ export class EventParser {
 			return null;
 		}
 
-		if (!this.isValidEventFile(metadata)) {
+		// Validate the metadata using Zod
+		const result = eventFileSchema.safeParse(metadata);
+		if (!result.success) {
+			console.warn(`Invalid event file ${file.path}:`, result.error.errors);
 			return null;
 		}
 
+		const validatedData = result.data;
 		return {
-			title: metadata.title || file.basename,
-			startDate: new Date(metadata.startTime),
-			endDate: metadata.endTime ? new Date(metadata.endTime) : undefined,
-			description: metadata.description,
+			title: validatedData.title || file.basename,
+			startDate: new Date(validatedData.startTime),
+			endDate: validatedData.endTime ? new Date(validatedData.endTime) : undefined,
+			description: validatedData.description,
 			sourcePath: file.path
 		};
-    }
-
-    /**
-     * Parse YAML string to object
-     * @param yaml YAML string to parse
-     * @returns Parsed object
-     */
-    private static parseYaml(yaml: string): any {
-        // Simple YAML parser for frontmatter
-        // This is a basic implementation - in a real plugin you might want to use a proper YAML parser
-        const result: any = {};
-        const lines = yaml.split('\n');
-        
-        for (const line of lines) {
-            const match = line.match(/^([^:]+):\s*(.*)$/);
-            if (match) {
-                const [_, key, value] = match;
-                result[key.trim()] = value.trim();
-            }
-        }
-        
-        return result;
-    }
-
-    /**
-     * Type guard for event file format
-     * @param obj Object to check
-     * @returns Whether the object is a valid event file
-     */
-    private static isValidEventFile(obj: any): obj is EventFileFormat {
-        return obj 
-            && typeof obj.startTime === 'string'
-            && (!obj.endTime || typeof obj.endTime === 'string')
-            && (!obj.title || typeof obj.title === 'string')
-            && (!obj.description || typeof obj.description === 'string');
     }
 } 
