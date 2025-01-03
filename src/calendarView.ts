@@ -54,26 +54,26 @@ export class CalendarView {
                 day: 'Day',
                 list: 'List'
             },
-            slotLabelFormat: {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false  // Use 24-hour format
-            },
-            eventTimeFormat: {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false  // Use 24-hour format
-            },
-            dayHeaderFormat: {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short'
-            },
-            titleFormat: {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            },
+            // slotLabelFormat: {
+            //     hour: '2-digit',
+            //     minute: '2-digit',
+            //     hour12: false  // Use 24-hour format
+            // },
+            // eventTimeFormat: {
+            //     hour: '2-digit',
+            //     minute: '2-digit',
+            //     hour12: false  // Use 24-hour format
+            // },
+            // dayHeaderFormat: {
+            //     weekday: 'short',
+            //     day: 'numeric',
+            //     month: 'short'
+            // },
+            // titleFormat: {
+            //     year: 'numeric',
+            //     month: 'long',
+            //     day: 'numeric'
+            // },
             // Add Obsidian-specific styling
             themeSystem: 'standard'
         });
