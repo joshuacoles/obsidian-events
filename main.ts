@@ -27,7 +27,9 @@ export default class CalendarPlugin extends Plugin {
 				};
 
 				// Get the full markdown content of the file
-				const fileContent = await this.app.vault.read(ctx.sourcePath);
+				const fileContent = await this.app.vault.read(
+					this.app.vault.getFileByPath(ctx.sourcePath)!
+				);
 				
 				// Parse events from the file content
 				const events = EventParser.parseEvents(fileContent);
