@@ -3,13 +3,15 @@ import {Calendar} from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
-import {App, TFile, Notice} from 'obsidian';
+import {App, TFile, Notice, moment} from 'obsidian';
 import type {Moment} from 'moment';
 
 type Granularity = "day" | "week" | "month" | "quarter" | "year";
 
 interface PeriodicNotesPlugin {
 	openPeriodicNote(granularity: Granularity, date: Moment, opts?: any): Promise<void>;
+
+	getPeriodicNote(granularity: Granularity, date: Moment): TFile | null;
 }
 
 export class CalendarView {
@@ -18,12 +20,14 @@ export class CalendarView {
 	private settings: CalendarBlockSettings;
 	private calendar: Calendar | null = null;
 	private app: App;
+	private periodicNotes: PeriodicNotesPlugin | undefined;
 
 	constructor(container: HTMLElement, events: CalendarEvent[], settings: CalendarBlockSettings) {
 		this.container = container;
 		this.events = events;
 		this.settings = settings;
 		this.app = (window as any).app;
+		this.periodicNotes = (this.app as any).plugins.plugins['periodic-notes'] as PeriodicNotesPlugin | undefined;
 	}
 
 	private convertToFullCalendarEvents() {
@@ -39,22 +43,35 @@ export class CalendarView {
 		}));
 	}
 
-	private async openDailyNote(date: Date) {
-		const periodicNotes = (this.app as any)?.plugins?.plugins['periodic-notes'] as PeriodicNotesPlugin | undefined;
-
-		if (!periodicNotes) {
+	private async openPeriodicNote(date: Date, granularity: Granularity) {
+		if (!this.periodicNotes) {
 			new Notice('Periodic Notes plugin is not installed or enabled');
 			return;
 		}
 
 		try {
-			// Convert the date to a moment object as required by the Periodic Notes API
 			const moment = (window as any).moment(date);
-			await periodicNotes.openPeriodicNote('day', moment);
+			await this.periodicNotes.openPeriodicNote(granularity, moment);
 		} catch (error) {
-			console.error('Error opening daily note:', error);
-			new Notice('Failed to open daily note');
+			console.error(`Error opening ${granularity} note:`, error);
+			new Notice(`Failed to open ${granularity} note`);
 		}
+	}
+
+	private async openDailyNote(date: Date) {
+		await this.openPeriodicNote(date, 'day');
+	}
+
+	private async openWeeklyNote(date: Date) {
+		await this.openPeriodicNote(date, 'week');
+	}
+
+	private hasPeriodicNote(date: Date, granularity: Granularity): boolean {
+		if (!this.periodicNotes) {
+			return false;
+		}
+
+		return this.periodicNotes.getPeriodicNote(granularity, moment(date)) != null
 	}
 
 	render() {
@@ -63,6 +80,18 @@ export class CalendarView {
 
 		// Create calendar container
 		const calendarEl = this.container.createEl('div', {cls: 'calendar-container'});
+
+		// Add CSS for periodic note indicators
+		const style = document.createElement('style');
+		style.textContent = `
+			.has-periodic-note {
+				background-color: var(--interactive-accent) !important;
+				color: var(--text-on-accent) !important;
+				border-radius: 4px;
+				opacity: 0.7;
+			}
+		`;
+		this.container.appendChild(style);
 
 		// Initialize FullCalendar
 		this.calendar = new Calendar(calendarEl, {
@@ -78,6 +107,22 @@ export class CalendarView {
 			height: 'auto',
 			locale: 'en-GB',  // Use UK English locale
 			firstDay: 1,      // Week starts on Monday
+			weekNumbers: true, // Show week numbers
+			weekNumberFormat: {week: 'numeric'},
+			weekNumberDidMount: (info) => {
+				const weekNumberEl = info.el;
+				weekNumberEl.style.cursor = 'pointer';
+				weekNumberEl.setAttribute('title', 'Click to open weekly note');
+
+				// Check if weekly note exists
+				if (this.hasPeriodicNote(info.date, 'week')) {
+					weekNumberEl.classList.add('has-periodic-note');
+				}
+
+				weekNumberEl.addEventListener('click', () => {
+					this.openWeeklyNote(info.date);
+				});
+			},
 			buttonText: {
 				today: 'Today',
 				month: 'Month',
@@ -104,12 +149,20 @@ export class CalendarView {
 			},
 			// Add hover effect for day cells
 			dayCellDidMount: (info) => {
-				info.el.querySelector('.fc-daygrid-day-number')?.addEventListener('click', () => {
-					this.openDailyNote(info.date);
-				});
+				const dayNumberEl: HTMLElement = info.el.querySelector('.fc-daygrid-day-number') as HTMLElement;
+				if (dayNumberEl) {
+					dayNumberEl.style.cursor = 'pointer';
+					dayNumberEl.setAttribute('title', 'Click to open daily note');
 
-				info.el.style.cursor = 'pointer';
-				info.el.setAttribute('title', 'Click to open daily note');
+					// Check if daily note exists
+					if (this.hasPeriodicNote(info.date, 'day')) {
+						dayNumberEl.classList.add('has-periodic-note');
+					}
+
+					dayNumberEl.addEventListener('click', () => {
+						this.openDailyNote(info.date);
+					});
+				}
 			},
 			themeSystem: 'standard'
 		});
