@@ -12,7 +12,7 @@ const modernEventSchema = z.object({
     }).optional(),
     title: z.string().optional(),
     description: z.string().optional(),
-}).strict();
+});
 
 // Legacy timed event schema
 const legacyTimedEventSchema = z.object({
@@ -21,8 +21,9 @@ const legacyTimedEventSchema = z.object({
     startTime: z.string().regex(/^\d{1,2}:\d{2}$/, "startTime must be in HH:mm format"),
     endTime: z.string().regex(/^\d{1,2}:\d{2}$/, "endTime must be in HH:mm format").optional(),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be in YYYY-MM-DD format"),
+    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "endDate must be in YYYY-MM-DD format").optional(),
     description: z.string().optional(),
-}).strict();
+});
 
 // All-day event schema
 const allDayEventSchema = z.object({
@@ -31,7 +32,7 @@ const allDayEventSchema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be in YYYY-MM-DD format"),
     endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "endDate must be in YYYY-MM-DD format").optional(),
     description: z.string().optional(),
-}).strict();
+});
 
 export class EventParser {
     /**
@@ -126,10 +127,20 @@ export class EventParser {
             // Combine date and time for start
             const startDate = this.combineDateAndTime(data.date, data.startTime);
             
-            // Combine date and time for end if endTime exists
-            const endDate = data.endTime 
-                ? this.combineDateAndTime(data.date, data.endTime)
-                : undefined;
+            // Handle end date/time
+            let endDate: Date | undefined;
+            if (data.endTime) {
+                // If we have both endDate and endTime, use endDate, otherwise use start date
+                const baseEndDate = data.endDate ? new Date(data.endDate) : new Date(data.date);
+                const [hours, minutes] = data.endTime.split(':').map(Number);
+                baseEndDate.setHours(hours, minutes);
+                endDate = baseEndDate;
+            } else if (data.endDate) {
+                // If we only have endDate but no endTime, use the same time as start
+                const [startHours, startMinutes] = data.startTime.split(':').map(Number);
+                endDate = new Date(data.endDate);
+                endDate.setHours(startHours, startMinutes);
+            }
 
             return {
                 title: data.title || file.basename,
