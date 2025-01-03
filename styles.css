@@ -97,3 +97,30 @@ If your plugin does not need CSS, delete this file.
         justify-content: center;
     }
 }
+
+/* Day header styling */
+.calendar-container .fc-col-header-cell {
+    padding: 4px;
+}
+
+.calendar-container .fc-col-header-cell-cushion {
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.calendar-container .fc-col-header-cell-cushion:hover {
+    background-color: var(--interactive-hover);
+}
+
+/* Day header with periodic note */
+.calendar-container .fc-col-header-cell.has-periodic-note .fc-col-header-cell-cushion {
+    background-color: var(--interactive-accent) !important;
+    color: var(--text-on-accent) !important;
+    opacity: 0.5;
+    transition: opacity 0.15s ease-in-out;
+}
+
+.calendar-container .fc-col-header-cell.has-periodic-note .fc-col-header-cell-cushion:hover {
+    opacity: 0.8;
+}

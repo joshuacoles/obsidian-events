@@ -109,6 +109,19 @@ export class CalendarView {
 						this.openWeeklyNote(info.date);
 					});
 				},
+				dayHeaderDidMount: (info) => {
+					const headerEl = info.el;
+					headerEl.style.cursor = 'pointer';
+					headerEl.setAttribute('title', 'Click to open daily note');
+
+					if (this.hasPeriodicNote(info.date, 'day')) {
+						headerEl.classList.add('has-periodic-note');
+					}
+
+					headerEl.addEventListener('click', () => {
+						this.openDailyNote(info.date);
+					});
+				},
 				buttonText: {
 					today: 'Today',
 					month: 'Month',
