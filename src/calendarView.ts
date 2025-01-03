@@ -22,7 +22,7 @@ export class CalendarView {
             start: event.startDate,
             end: event.endDate,
             description: event.description,
-            allDay: !event.endDate // If no end date, treat as all day event
+            allDay: event.allDay
         }));
     }
 
@@ -45,6 +45,35 @@ export class CalendarView {
             events: this.convertToFullCalendarEvents(),
             initialDate: this.settings.defaultDate ? new Date(this.settings.defaultDate) : new Date(),
             height: 'auto',
+            locale: 'en-GB',  // Use UK English locale
+            firstDay: 1,      // Week starts on Monday
+            buttonText: {
+                today: 'Today',
+                month: 'Month',
+                week: 'Week',
+                day: 'Day',
+                list: 'List'
+            },
+            slotLabelFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false  // Use 24-hour format
+            },
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false  // Use 24-hour format
+            },
+            dayHeaderFormat: {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short'
+            },
+            titleFormat: {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            },
             // Add Obsidian-specific styling
             themeSystem: 'standard'
         });
