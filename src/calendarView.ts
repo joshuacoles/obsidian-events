@@ -3,17 +3,20 @@ import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
+import { App, TFile } from 'obsidian';
 
 export class CalendarView {
     private container: HTMLElement;
     private events: CalendarEvent[];
     private settings: CalendarBlockSettings;
     private calendar: Calendar | null = null;
+    private app: App;
 
     constructor(container: HTMLElement, events: CalendarEvent[], settings: CalendarBlockSettings) {
         this.container = container;
         this.events = events;
         this.settings = settings;
+        this.app = (window as any).app;
     }
 
     private convertToFullCalendarEvents() {
@@ -22,7 +25,10 @@ export class CalendarView {
             start: event.startDate,
             end: event.endDate,
             description: event.description,
-            allDay: event.allDay
+            allDay: event.allDay,
+            extendedProps: {
+                sourcePath: event.sourcePath
+            }
         }));
     }
 
@@ -54,27 +60,23 @@ export class CalendarView {
                 day: 'Day',
                 list: 'List'
             },
-            // slotLabelFormat: {
-            //     hour: '2-digit',
-            //     minute: '2-digit',
-            //     hour12: false  // Use 24-hour format
-            // },
-            // eventTimeFormat: {
-            //     hour: '2-digit',
-            //     minute: '2-digit',
-            //     hour12: false  // Use 24-hour format
-            // },
-            // dayHeaderFormat: {
-            //     weekday: 'short',
-            //     day: 'numeric',
-            //     month: 'short'
-            // },
-            // titleFormat: {
-            //     year: 'numeric',
-            //     month: 'long',
-            //     day: 'numeric'
-            // },
-            // Add Obsidian-specific styling
+            eventClick: (info) => {
+                const sourcePath = info.event.extendedProps.sourcePath;
+                if (sourcePath) {
+                    // Get the file from the vault
+                    const file = this.app.vault.getAbstractFileByPath(sourcePath);
+                    if (file instanceof TFile) {
+                        // Open the file in a new leaf
+                        this.app.workspace.getLeaf(false).openFile(file);
+                    }
+                }
+            },
+            // Add event hover effect to indicate clickability
+            eventDidMount: (info) => {
+                if (info.event.extendedProps.sourcePath) {
+                    info.el.style.cursor = 'pointer';
+                }
+            },
             themeSystem: 'standard'
         });
 
