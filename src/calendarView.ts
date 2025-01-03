@@ -1,9 +1,14 @@
 import { CalendarEvent, CalendarBlockSettings } from './types';
+import { Calendar } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import listPlugin from '@fullcalendar/list';
 
 export class CalendarView {
     private container: HTMLElement;
     private events: CalendarEvent[];
     private settings: CalendarBlockSettings;
+    private calendar: Calendar | null = null;
 
     constructor(container: HTMLElement, events: CalendarEvent[], settings: CalendarBlockSettings) {
         this.container = container;
@@ -11,23 +16,52 @@ export class CalendarView {
         this.settings = settings;
     }
 
+    private convertToFullCalendarEvents() {
+        return this.events.map(event => ({
+            title: event.title,
+            start: event.startDate,
+            end: event.endDate,
+            description: event.description,
+            allDay: !event.endDate // If no end date, treat as all day event
+        }));
+    }
+
     render() {
         // Clear container
         this.container.empty();
         
-        // Add placeholder content for now
-        const calendar = this.container.createEl('div', { cls: 'calendar-container' });
-        calendar.createEl('p', { text: `Calendar View: ${this.settings.view}` });
+        // Create calendar container
+        const calendarEl = this.container.createEl('div', { cls: 'calendar-container' });
         
-        // Render mock events
-        const eventsList = calendar.createEl('div', { cls: 'calendar-events' });
-        this.events.forEach(event => {
-            const eventEl = eventsList.createEl('div', { cls: 'calendar-event' });
-            eventEl.createEl('strong', { text: event.title });
-            eventEl.createEl('span', { text: event.startDate.toLocaleDateString() });
-            if (event.description) {
-                eventEl.createEl('p', { text: event.description });
-            }
+        // Initialize FullCalendar
+        this.calendar = new Calendar(calendarEl, {
+            plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
+            initialView: this.getInitialView(),
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            },
+            events: this.convertToFullCalendarEvents(),
+            initialDate: this.settings.defaultDate ? new Date(this.settings.defaultDate) : new Date(),
+            height: 'auto',
+            // Add Obsidian-specific styling
+            themeSystem: 'standard'
         });
+
+        this.calendar.render();
+    }
+
+    private getInitialView() {
+        switch (this.settings.view) {
+            case 'month':
+                return 'dayGridMonth';
+            case 'week':
+                return 'timeGridWeek';
+            case 'day':
+                return 'timeGridDay';
+            default:
+                return 'dayGridMonth';
+        }
     }
 } 

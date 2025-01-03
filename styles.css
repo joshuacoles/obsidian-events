@@ -6,3 +6,51 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+/* Calendar container */
+.calendar-container {
+    padding: 1em;
+    margin: 1em 0;
+}
+
+/* FullCalendar customization for Obsidian */
+.calendar-container .fc {
+    --fc-border-color: var(--background-modifier-border);
+    --fc-button-text-color: var(--text-normal);
+    --fc-button-bg-color: var(--interactive-normal);
+    --fc-button-border-color: var(--background-modifier-border);
+    --fc-button-hover-bg-color: var(--interactive-hover);
+    --fc-button-hover-border-color: var(--background-modifier-border-hover);
+    --fc-button-active-bg-color: var(--interactive-accent);
+    --fc-button-active-border-color: var(--interactive-accent-hover);
+    --fc-event-bg-color: var(--interactive-accent);
+    --fc-event-border-color: var(--interactive-accent-hover);
+    --fc-event-text-color: var(--text-on-accent);
+    --fc-today-bg-color: var(--background-primary-alt);
+}
+
+/* Calendar header */
+.calendar-container .fc-header-toolbar {
+    margin-bottom: 1em;
+}
+
+/* Event styling */
+.calendar-container .fc-event {
+    border-radius: 3px;
+    padding: 2px 4px;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 680px) {
+    .calendar-container .fc-header-toolbar {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+    }
+    
+    .calendar-container .fc-toolbar-chunk {
+        display: flex;
+        gap: 0.5em;
+        justify-content: center;
+    }
+}
