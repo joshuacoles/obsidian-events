@@ -2,8 +2,8 @@ import {Vault, TFile, App} from 'obsidian';
 import { CalendarEvent, EventFileFormat } from './types';
 import { z } from 'zod';
 
-// Define the Zod schema for event file validation
-const eventFileSchema = z.object({
+// Modern event schema
+const modernEventSchema = z.object({
     startTime: z.string().refine((val) => !isNaN(Date.parse(val)), {
         message: "startTime must be a valid ISO8601 date string"
     }),
@@ -12,14 +12,21 @@ const eventFileSchema = z.object({
     }).optional(),
     title: z.string().optional(),
     description: z.string().optional(),
-});
+}).strict();
+
+// Legacy event schema
+const legacyEventSchema = z.object({
+    title: z.string().optional(),
+    allDay: z.boolean().optional().default(false),
+    startTime: z.string().regex(/^\d{1,2}:\d{2}$/, "startTime must be in HH:mm format"),
+    endTime: z.string().regex(/^\d{1,2}:\d{2}$/, "endTime must be in HH:mm format").optional(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be in YYYY-MM-DD format"),
+    description: z.string().optional(),
+}).strict();
 
 export class EventParser {
     /**
      * Parse events from the calendar folder
-     * @param vault Obsidian vault
-     * @param calendarFolder Path to the calendar folder
-     * @returns Array of calendar events
      */
     static async parseEvents(vault: Vault, calendarFolder: string): Promise<CalendarEvent[]> {
         const events: CalendarEvent[] = [];
@@ -55,31 +62,62 @@ export class EventParser {
 
     /**
      * Parse a single event file
-     * @param vault Obsidian vault
-     * @param file File to parse
-     * @returns Calendar event or null if invalid
      */
     private static async parseEventFile(vault: Vault, file: TFile): Promise<CalendarEvent | null> {
-		const metadata = ((window as any).app as App).metadataCache.getFileCache(file)?.frontmatter;
+        const metadata = ((window as any).app as App).metadataCache.getFileCache(file)?.frontmatter;
 
-		if (!metadata) {
-			return null;
-		}
+        if (!metadata) {
+            return null;
+        }
 
-		// Validate the metadata using Zod
-		const result = eventFileSchema.safeParse(metadata);
-		if (!result.success) {
-			console.warn(`Invalid event file ${file.path}:`, result.error.errors);
-			return null;
-		}
+        // Try modern format first
+        const modernResult = modernEventSchema.safeParse(metadata);
+        if (modernResult.success) {
+            const data = modernResult.data;
+            return {
+                title: data.title || file.basename,
+                startDate: new Date(data.startTime),
+                endDate: data.endTime ? new Date(data.endTime) : undefined,
+                description: data.description,
+                sourcePath: file.path
+            };
+        }
 
-		const validatedData = result.data;
-		return {
-			title: validatedData.title || file.basename,
-			startDate: new Date(validatedData.startTime),
-			endDate: validatedData.endTime ? new Date(validatedData.endTime) : undefined,
-			description: validatedData.description,
-			sourcePath: file.path
-		};
+        // If modern format fails, try legacy format
+        const legacyResult = legacyEventSchema.safeParse(metadata);
+        if (legacyResult.success) {
+            const data = legacyResult.data;
+            
+            // Combine date and time for start
+            const startDate = this.combineDateAndTime(data.date, data.startTime);
+            
+            // Combine date and time for end if endTime exists
+            const endDate = data.endTime 
+                ? this.combineDateAndTime(data.date, data.endTime)
+                : undefined;
+
+            return {
+                title: data.title || file.basename,
+                startDate,
+                endDate,
+                description: data.description,
+                sourcePath: file.path
+            };
+        }
+
+        // Log both validation failures if neither format matches
+        console.warn(`Invalid event file ${file.path}. Modern format errors:`, modernResult.error.errors);
+        console.warn(`Legacy format errors:`, legacyResult.error.errors);
+        return null;
+    }
+
+    /**
+     * Combine a date string (YYYY-MM-DD) and time string (HH:mm) into a Date object
+     */
+    private static combineDateAndTime(dateStr: string, timeStr: string): Date {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const date = new Date(dateStr);
+        date.setHours(hours, minutes);
+        return date;
     }
 } 
