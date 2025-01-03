@@ -32,7 +32,7 @@ export default class CalendarPlugin extends Plugin {
 				const events = await EventParser.parseEvents(this.app.vault, this.settings.calendarFolder);
 
 				// Render the calendar
-				const calendar = new CalendarView(el, events, blockSettings);
+				const calendar = new CalendarView(this.app, el, events, blockSettings);
 				calendar.render();
 			} catch (error) {
 				console.error('Error rendering calendar:', error);

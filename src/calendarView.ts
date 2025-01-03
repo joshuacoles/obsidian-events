@@ -19,14 +19,14 @@ export class CalendarView {
 	private events: CalendarEvent[];
 	private settings: CalendarBlockSettings;
 	private calendar: Calendar | null = null;
-	private app: App;
-	private periodicNotes: PeriodicNotesPlugin | undefined;
+	private readonly app: App;
+	private readonly periodicNotes: PeriodicNotesPlugin | undefined;
 
-	constructor(container: HTMLElement, events: CalendarEvent[], settings: CalendarBlockSettings) {
+	constructor(app: App, container: HTMLElement, events: CalendarEvent[], settings: CalendarBlockSettings) {
+		this.app = app;
 		this.container = container;
 		this.events = events;
 		this.settings = settings;
-		this.app = (window as any).app;
 		this.periodicNotes = (this.app as any).plugins.plugins['periodic-notes'] as PeriodicNotesPlugin | undefined;
 	}
 
