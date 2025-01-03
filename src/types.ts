@@ -4,6 +4,7 @@ export interface CalendarEvent {
     endDate?: Date;
     description?: string;
     sourcePath?: string;  // Path to the source file
+    allDay: boolean;      // Whether this is an all-day event
 }
 
 export interface CalendarBlockSettings {

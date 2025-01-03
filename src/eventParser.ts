@@ -2,7 +2,7 @@ import {Vault, TFile, App} from 'obsidian';
 import { CalendarEvent, EventFileFormat } from './types';
 import { z } from 'zod';
 
-// Modern event schema
+// Modern event schema (ISO8601)
 const modernEventSchema = z.object({
     startTime: z.string().refine((val) => !isNaN(Date.parse(val)), {
         message: "startTime must be a valid ISO8601 date string"
@@ -14,13 +14,22 @@ const modernEventSchema = z.object({
     description: z.string().optional(),
 }).strict();
 
-// Legacy event schema
-const legacyEventSchema = z.object({
+// Legacy timed event schema
+const legacyTimedEventSchema = z.object({
     title: z.string().optional(),
-    allDay: z.boolean().optional().default(false),
+    allDay: z.literal(false),
     startTime: z.string().regex(/^\d{1,2}:\d{2}$/, "startTime must be in HH:mm format"),
     endTime: z.string().regex(/^\d{1,2}:\d{2}$/, "endTime must be in HH:mm format").optional(),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be in YYYY-MM-DD format"),
+    description: z.string().optional(),
+}).strict();
+
+// All-day event schema
+const allDayEventSchema = z.object({
+    title: z.string().optional(),
+    allDay: z.literal(true),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be in YYYY-MM-DD format"),
+    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "endDate must be in YYYY-MM-DD format").optional(),
     description: z.string().optional(),
 }).strict();
 
@@ -79,12 +88,38 @@ export class EventParser {
                 startDate: new Date(data.startTime),
                 endDate: data.endTime ? new Date(data.endTime) : undefined,
                 description: data.description,
-                sourcePath: file.path
+                sourcePath: file.path,
+                allDay: false
             };
         }
 
-        // If modern format fails, try legacy format
-        const legacyResult = legacyEventSchema.safeParse(metadata);
+        // Try all-day event format
+        const allDayResult = allDayEventSchema.safeParse(metadata);
+        if (allDayResult.success) {
+            const data = allDayResult.data;
+            // For all-day events, set time to start of day for start date
+            const startDate = new Date(data.date);
+            startDate.setHours(0, 0, 0, 0);
+            
+            // For end date, if provided, set time to end of day
+            let endDate: Date | undefined;
+            if (data.endDate) {
+                endDate = new Date(data.endDate);
+                endDate.setHours(23, 59, 59, 999);
+            }
+
+            return {
+                title: data.title || file.basename,
+                startDate,
+                endDate,
+                description: data.description,
+                sourcePath: file.path,
+                allDay: true
+            };
+        }
+
+        // If neither modern nor all-day format, try legacy timed format
+        const legacyResult = legacyTimedEventSchema.safeParse(metadata);
         if (legacyResult.success) {
             const data = legacyResult.data;
             
@@ -101,13 +136,16 @@ export class EventParser {
                 startDate,
                 endDate,
                 description: data.description,
-                sourcePath: file.path
+                sourcePath: file.path,
+                allDay: false
             };
         }
 
-        // Log both validation failures if neither format matches
-        console.warn(`Invalid event file ${file.path}. Modern format errors:`, modernResult.error.errors);
-        console.warn(`Legacy format errors:`, legacyResult.error.errors);
+        // Log all validation failures if no format matches
+        console.warn(`Invalid event file ${file.path}:`);
+        console.warn('Modern format errors:', modernResult.error.errors);
+        console.warn('All-day format errors:', allDayResult.error.errors);
+        console.warn('Legacy timed format errors:', legacyResult.error.errors);
         return null;
     }
 
