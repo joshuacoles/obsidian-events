@@ -3,11 +3,18 @@ export interface CalendarEvent {
     startDate: Date;
     endDate?: Date;
     description?: string;
-    // Add more fields as needed
+    sourcePath?: string;  // Path to the source file
 }
 
 export interface CalendarBlockSettings {
     view: 'month' | 'week' | 'day';
     defaultDate?: string;
     filter?: string;
+}
+
+export interface EventFileFormat {
+    startTime: string;  // ISO8601 date string
+    endTime?: string;   // ISO8601 date string
+    title?: string;     // Optional title, falls back to filename
+    description?: string;
 } 

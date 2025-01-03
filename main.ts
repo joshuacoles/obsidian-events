@@ -5,10 +5,12 @@ import { CalendarView } from './src/calendarView';
 
 interface CalendarPluginSettings {
 	defaultView: 'month' | 'week' | 'day';
+	calendarFolder: string;
 }
 
 const DEFAULT_SETTINGS: CalendarPluginSettings = {
-	defaultView: 'month'
+	defaultView: 'month',
+	calendarFolder: 'Calendar'
 }
 
 export default class CalendarPlugin extends Plugin {
@@ -26,13 +28,8 @@ export default class CalendarPlugin extends Plugin {
 					...JSON.parse(source || '{}')
 				};
 
-				// Get the full markdown content of the file
-				const fileContent = await this.app.vault.read(
-					this.app.vault.getFileByPath(ctx.sourcePath)!
-				);
-				
-				// Parse events from the file content
-				const events = EventParser.parseEvents(fileContent);
+				// Parse events from calendar folder
+				const events = await EventParser.parseEvents(this.app.vault, this.settings.calendarFolder);
 
 				// Render the calendar
 				const calendar = new CalendarView(el, events, blockSettings);
