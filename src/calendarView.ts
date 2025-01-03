@@ -71,7 +71,7 @@ export class CalendarView {
 			return false;
 		}
 
-		return this.periodicNotes.getPeriodicNote(granularity, moment(date)) != null
+		return this.periodicNotes.getPeriodicNote(granularity, moment(date)) != null;
 	}
 
 	render() {
@@ -81,90 +81,70 @@ export class CalendarView {
 		// Create calendar container
 		const calendarEl = this.container.createEl('div', {cls: 'calendar-container'});
 
-		// Add CSS for periodic note indicators
-		const style = document.createElement('style');
-		style.textContent = `
-			.has-periodic-note {
-				background-color: var(--interactive-accent) !important;
-				color: var(--text-on-accent) !important;
-				border-radius: 4px;
-				opacity: 0.7;
-			}
-		`;
-		this.container.appendChild(style);
-
 		// Initialize FullCalendar
 		this.calendar = new Calendar(calendarEl, {
 			plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
-			initialView: this.getInitialView(),
-			headerToolbar: {
-				left: 'prev,next today',
-				center: 'title',
-				right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-			},
-			events: this.convertToFullCalendarEvents(),
-			initialDate: this.settings.defaultDate ? new Date(this.settings.defaultDate) : new Date(),
-			height: 'auto',
-			locale: 'en-GB',  // Use UK English locale
-			firstDay: 1,      // Week starts on Monday
-			weekNumbers: true, // Show week numbers
-			weekNumberFormat: {week: 'numeric'},
-			weekNumberDidMount: (info) => {
-				const weekNumberEl = info.el;
-				weekNumberEl.style.cursor = 'pointer';
-				weekNumberEl.setAttribute('title', 'Click to open weekly note');
+				initialView: this.getInitialView(),
+				headerToolbar: {
+					left: 'prev,next today',
+					center: 'title',
+					right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+				},
+				events: this.convertToFullCalendarEvents(),
+				initialDate: this.settings.defaultDate ? new Date(this.settings.defaultDate) : new Date(),
+				height: 'auto',
+				locale: 'en-GB',  // Use UK English locale
+				firstDay: 1,      // Week starts on Monday
+				weekNumbers: true, // Show week numbers
+				weekNumberFormat: {week: 'numeric'},
+				weekNumberDidMount: (info) => {
+					const weekNumberEl = info.el;
+					weekNumberEl.setAttribute('title', 'Click to open weekly note');
 
-				// Check if weekly note exists
-				if (this.hasPeriodicNote(info.date, 'week')) {
-					weekNumberEl.classList.add('has-periodic-note');
-				}
-
-				weekNumberEl.addEventListener('click', () => {
-					this.openWeeklyNote(info.date);
-				});
-			},
-			buttonText: {
-				today: 'Today',
-				month: 'Month',
-				week: 'Week',
-				day: 'Day',
-				list: 'List'
-			},
-			eventClick: (info) => {
-				const sourcePath = info.event.extendedProps.sourcePath;
-				if (sourcePath) {
-					// Get the file from the vault
-					const file = this.app.vault.getAbstractFileByPath(sourcePath);
-					if (file instanceof TFile) {
-						// Open the file in a new leaf
-						this.app.workspace.getLeaf(false).openFile(file);
-					}
-				}
-			},
-			// Add event hover effect to indicate clickability
-			eventDidMount: (info) => {
-				if (info.event.extendedProps.sourcePath) {
-					info.el.style.cursor = 'pointer';
-				}
-			},
-			// Add hover effect for day cells
-			dayCellDidMount: (info) => {
-				const dayNumberEl: HTMLElement = info.el.querySelector('.fc-daygrid-day-number') as HTMLElement;
-				if (dayNumberEl) {
-					dayNumberEl.style.cursor = 'pointer';
-					dayNumberEl.setAttribute('title', 'Click to open daily note');
-
-					// Check if daily note exists
-					if (this.hasPeriodicNote(info.date, 'day')) {
-						dayNumberEl.classList.add('has-periodic-note');
+					if (this.hasPeriodicNote(info.date, 'week')) {
+						weekNumberEl.classList.add('has-periodic-note');
 					}
 
-					dayNumberEl.addEventListener('click', () => {
-						this.openDailyNote(info.date);
+					weekNumberEl.addEventListener('click', () => {
+						this.openWeeklyNote(info.date);
 					});
-				}
-			},
-			themeSystem: 'standard'
+				},
+				buttonText: {
+					today: 'Today',
+					month: 'Month',
+					week: 'Week',
+					day: 'Day',
+					list: 'List'
+				},
+				eventClick: (info) => {
+					const sourcePath = info.event.extendedProps.sourcePath;
+					if (sourcePath) {
+						const file = this.app.vault.getAbstractFileByPath(sourcePath);
+						if (file instanceof TFile) {
+							this.app.workspace.getLeaf(false).openFile(file);
+						}
+					}
+				},
+				eventDidMount: (info) => {
+					if (info.event.extendedProps.sourcePath) {
+						info.el.style.cursor = 'pointer';
+					}
+				},
+				dayCellDidMount: (info) => {
+					const dayNumberEl = info.el.querySelector('.fc-daygrid-day-number');
+					if (dayNumberEl) {
+						dayNumberEl.setAttribute('title', 'Click to open daily note');
+
+						if (this.hasPeriodicNote(info.date, 'day')) {
+							info.el.classList.add('has-periodic-note');
+						}
+
+						dayNumberEl.addEventListener('click', () => {
+							this.openDailyNote(info.date);
+						});
+					}
+				},
+				themeSystem: 'standard'
 		});
 
 		this.calendar.render();
