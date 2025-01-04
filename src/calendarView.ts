@@ -94,11 +94,11 @@ export class CalendarView {
 		this.calendar = new Calendar(calendarEl, {
 			plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
 			initialView: this.getInitialView(),
-			headerToolbar: {
+			headerToolbar: this.settings.showToolbar ? {
 				left: 'prev,next today',
 				center: 'title',
 				right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-			},
+			} : false,
 			events: this.convertToFullCalendarEvents(),
 			initialDate: this.settings.defaultDate ? new Date(this.settings.defaultDate) : new Date(),
 			height: 'auto',
@@ -341,6 +341,8 @@ export class CalendarView {
 				return 'timeGridWeek';
 			case 'day':
 				return 'timeGridDay';
+			case "listDay":
+				return "listDay";
 			default:
 				return 'dayGridMonth';
 		}

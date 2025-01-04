@@ -26,6 +26,7 @@ export default class CalendarPlugin extends Plugin {
 				// Parse the code block settings
 				const blockSettings: CalendarBlockSettings = {
 					view: this.settings.defaultView,
+					showToolbar: true,
 					...JSON.parse(source || '{}')
 				};
 

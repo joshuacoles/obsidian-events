@@ -8,7 +8,8 @@ export interface CalendarEvent {
 }
 
 export interface CalendarBlockSettings {
-    view: 'month' | 'week' | 'day';
+	showToolbar: boolean;
+    view: string;
     defaultDate?: string;
     filter?: string;
 }
