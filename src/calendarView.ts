@@ -8,6 +8,7 @@ import {createElement} from '@fullcalendar/core/preact';
 import * as dFns from 'date-fns';
 import {Granularity, PeriodicNotesPlugin} from './periodicNotes';
 import CalendarPlugin from "./main";
+import { CreateEventModal } from './CreateEventModal';
 
 export class CalendarView {
 	private container: HTMLElement;
@@ -38,7 +39,7 @@ export class CalendarView {
 			extendedProps: {
 				sourcePath: event.sourcePath
 			},
-			url: event.sourcePath,
+			url: event.sourcePath?.startsWith("ics") ? undefined : event.sourcePath,
 		}));
 	}
 
@@ -277,7 +278,26 @@ export class CalendarView {
 			},
 			eventClick: (info) => {
 				const sourcePath = info.event.extendedProps.sourcePath;
-				if (sourcePath) {
+				if (!sourcePath) return;
+
+				if (sourcePath.startsWith('ics://')) {
+					// For ICS events, show the create file modal
+					const event: CalendarEvent = {
+						title: info.event.title,
+						startDate: info.event.start!,
+						endDate: info.event.end || undefined,
+						description: info.event.extendedProps.description,
+						allDay: info.event.allDay,
+						sourcePath: sourcePath
+					};
+
+					new CreateEventModal(
+						this.app,
+						event,
+						this.plugin.settings.calendarFolder
+					).open();
+				} else {
+					// For local files, open them directly
 					const file = this.app.vault.getAbstractFileByPath(sourcePath);
 					if (file instanceof TFile) {
 						this.app.workspace.getLeaf(false).openFile(file);
@@ -286,7 +306,9 @@ export class CalendarView {
 			},
 			eventDidMount: (info) => {
 				const sourcePath = info.event.extendedProps.sourcePath;
-				this.enhanceLink(info.el as HTMLAnchorElement, sourcePath);
+				if (!info.event.extendedProps.sourcePath.startsWith("ics")) {
+					this.enhanceLink(info.el as HTMLAnchorElement, sourcePath);
+				}
 			},
 			dayCellDidMount: (info) => {
 				const dayNumberEl = info.el.querySelector('.fc-daygrid-day-number') as HTMLAnchorElement;
