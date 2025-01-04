@@ -1,8 +1,9 @@
-import { App, Plugin, MarkdownPostProcessorContext, TFile, Notice } from 'obsidian';
-import { CalendarBlockSettings, EventFileFormat } from './src/types';
-import { EventParser } from './src/eventParser';
-import { CalendarView } from './src/calendarView';
+import {Plugin, Notice} from 'obsidian';
+import {CalendarBlockSettings, CalendarViewKind, EventFileFormat} from './src/types';
+import {EventParser} from './src/eventParser';
+import {CalendarView} from './src/calendarView';
 import {AddEventModal} from './src/addEventModal';
+import {PeriodicNotesPlugin} from "./src/periodicNotes";
 
 interface CalendarPluginSettings {
 	defaultView: string;
@@ -16,6 +17,7 @@ const DEFAULT_SETTINGS: CalendarPluginSettings = {
 
 export default class CalendarPlugin extends Plugin {
 	private settings: CalendarPluginSettings;
+	private periodicNotes?: PeriodicNotesPlugin;
 
 	async onload() {
 		await this.loadSettings();
@@ -23,11 +25,24 @@ export default class CalendarPlugin extends Plugin {
 		// Register the calendar code block processor
 		this.registerMarkdownCodeBlockProcessor('calendar', async (source, el, ctx) => {
 			try {
-				// Parse the code block settings
-				const blockSettings: CalendarBlockSettings = {
-					view: this.settings.defaultView,
-					showToolbar: true,
-					...JSON.parse(source || '{}')
+				this.periodicNotes ||= (this.app as any).plugins.plugins['periodic-notes'] as PeriodicNotesPlugin | undefined;
+
+				const periodic = this.periodicNotes?.findInCache(ctx.sourcePath);
+				const sourceOpts = JSON.parse(source || '{}');
+				const { views, ...rest } = sourceOpts;
+
+				const blockSettings: CalendarBlockSettings = periodic ? {
+					views: (views ?? ['dayGrid']).map((x: CalendarViewKind) => [periodic.granularity, x]),
+					fixed: true,
+					date: periodic.date,
+					showTitle: false,
+					...rest
+				} : {
+					views: [['month', 'dayGrid'], ['week', 'timeGrid'], ['day', 'timeGrid'], ['week', 'list']],
+					fixed: false,
+					date: new Date(),
+					showTitle: true,
+					...sourceOpts,
 				};
 
 				// Parse events from calendar folder

@@ -5,16 +5,8 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import {App, TFile, Notice, moment} from 'obsidian';
 import {createElement} from '@fullcalendar/core/preact';
-import type {Moment} from 'moment';
 import * as dFns from 'date-fns';
-
-type Granularity = "day" | "week" | "month" | "quarter" | "year";
-
-interface PeriodicNotesPlugin {
-	openPeriodicNote(granularity: Granularity, date: Moment, opts?: any): Promise<void>;
-
-	getPeriodicNote(granularity: Granularity, date: Moment): TFile | null;
-}
+import {Granularity, PeriodicNotesPlugin} from './periodicNotes';
 
 export class CalendarView {
 	private container: HTMLElement;
@@ -117,14 +109,14 @@ export class CalendarView {
 		// Initialize FullCalendar
 		this.calendar = new Calendar(calendarEl, {
 			plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
-			initialView: this.settings.view,
-			headerToolbar: this.settings.showToolbar ? {
-				left: 'prev,next today',
-				center: 'title',
-				right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+			initialView: this.viewType(...this.settings.views[0]),
+			headerToolbar: (!this.settings.fixed || this.settings.views.length > 1 || this.settings.showTitle) ? {
+				left: this.settings.fixed ? undefined : 'prev,next today',
+				center: this.settings.showTitle ? 'title' : undefined,
+				right: this.settings.views.length > 1 ? this.settings.views.map(x => this.viewType(...x)).filter(Boolean).join(',') : undefined,
 			} : false,
 			events: this.convertToFullCalendarEvents(),
-			initialDate: this.settings.defaultDate ? new Date(this.settings.defaultDate) : new Date(),
+			initialDate: this.settings.date ? new Date(this.settings.date) : new Date(),
 			height: 'auto',
 			locale: 'en-GB',
 			firstDay: 1,
@@ -323,5 +315,27 @@ export class CalendarView {
 		anchor.style.setProperty('--data-link-path', path);
 		anchor.target = '_blank';
 		anchor.rel = 'noopener nofollow';
+	}
+
+	private viewType(period: Granularity, kind: 'list' | 'timeGrid' | 'dayGrid') {
+		const options: Record<'list' | 'timeGrid' | 'dayGrid', Partial<Record<Granularity, string>>> = {
+			dayGrid: {
+				day: 'dayGridDay',
+				month: 'dayGridMonth',
+				year: 'dayGridYear'
+			},
+			timeGrid: {
+				day: 'timeGridDay',
+				week: 'timeGridWeek'
+			},
+			list: {
+				day: 'listDay',
+				week: 'listWeek',
+				month: 'listMonth',
+				year: 'listYear'
+			}
+		};
+
+		return options[kind]?.[period] ?? undefined;
 	}
 }
