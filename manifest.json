@@ -1,11 +1,11 @@
 {
 	"id": "obsidian-events",
-	"name": "Obsidian Events",
+	"name": "Events Calendar",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
+	"description": "A calendar view for your events in Obsidian.",
 	"author": "Joshua Coles",
-	"authorUrl": "https://joshuacoles.eu",
+	"authorUrl": "https://joshuacoles.me",
 	"fundingUrl": "https://obsidian.md/pricing",
 	"isDesktopOnly": false
 }

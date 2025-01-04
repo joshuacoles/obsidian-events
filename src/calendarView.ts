@@ -108,9 +108,10 @@ export class CalendarView {
 			weekNumberFormat: {week: 'numeric'},
 			views: {
 				dayGridMonth: {
+					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						const month = currentDate.toLocaleString('en-GB', { month: 'long' });
+						const month = currentDate.toLocaleString('en-GB', {month: 'long'});
 						const year = currentDate.getFullYear();
 
 						const monthEl = createElement('span', {
@@ -133,9 +134,10 @@ export class CalendarView {
 					}
 				},
 				timeGridWeek: {
+					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						const shortMonth = currentDate.toLocaleString('en-GB', { month: 'short' });
+						const shortMonth = currentDate.toLocaleString('en-GB', {month: 'short'});
 						const day = currentDate.getDate();
 						const year = currentDate.getFullYear();
 
@@ -170,9 +172,10 @@ export class CalendarView {
 					}
 				},
 				timeGridDay: {
+					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						const month = currentDate.toLocaleString('en-GB', { month: 'long' });
+						const month = currentDate.toLocaleString('en-GB', {month: 'long'});
 						const day = currentDate.getDate();
 						const year = currentDate.getFullYear();
 
@@ -197,15 +200,16 @@ export class CalendarView {
 							title: 'Click to open daily note'
 						}, day);
 
-						return createElement('span', {}, 
+						return createElement('span', {},
 							monthEl, ' ', dayEl, ', ', yearEl
 						);
 					}
 				},
 				listWeek: {
+					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						const shortMonth = currentDate.toLocaleString('en-GB', { month: 'short' });
+						const shortMonth = currentDate.toLocaleString('en-GB', {month: 'short'});
 						const day = currentDate.getDate();
 						const year = currentDate.getFullYear();
 
@@ -250,7 +254,7 @@ export class CalendarView {
 						const target = e.target as HTMLElement;
 						const date = new Date(target.dataset.date || '');
 						const type = target.dataset.type as Granularity;
-						
+
 						if (type === 'month') {
 							this.openMonthlyNote(date);
 						} else if (type === 'year') {
