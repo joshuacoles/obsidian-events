@@ -6,6 +6,7 @@ import listPlugin from '@fullcalendar/list';
 import {App, TFile, Notice, moment} from 'obsidian';
 import {createElement} from '@fullcalendar/core/preact';
 import type {Moment} from 'moment';
+import * as dFns from 'date-fns';
 
 type Granularity = "day" | "week" | "month" | "quarter" | "year";
 
@@ -119,6 +120,7 @@ export class CalendarView {
 			'data-date': date.toISOString(),
 			'data-type': type,
 			title: `Click to open ${type}ly note`,
+			onClick: () => this.periodicNotes?.openPeriodicNote(type, date)
 		}, text);
 	}
 
@@ -236,53 +238,58 @@ export class CalendarView {
 					}
 				},
 			},
-			datesSet: () => {
-				// Add click handlers to the title elements
-				const titleEl = this.container.querySelector('.fc-toolbar-title');
-				if (!titleEl) return;
-
-				titleEl.querySelectorAll('.clickable-title').forEach(el => {
-					el.addEventListener('click', (e) => {
-						const target = e.target as HTMLElement;
-						const date = new Date(target.dataset.date || '');
-						const type = target.dataset.type as Granularity;
-
-						if (type === 'month') {
-							this.openMonthlyNote(date);
-						} else if (type === 'year') {
-							this.openYearlyNote(date);
-						} else if (type === 'week') {
-							this.openWeeklyNote(date);
-						} else if (type === 'day') {
-							this.openDailyNote(date);
-						}
-					});
-				});
-			},
 			weekNumberDidMount: (info) => {
 				const weekNumberEl = info.el;
-				weekNumberEl.setAttribute('title', 'Click to open weekly note');
+				const periodicNote = this.getPeriodicNote('week', info.date);
 
-				if (this.hasPeriodicNote(info.date, 'week')) {
-					weekNumberEl.classList.add('has-periodic-note');
+				if (periodicNote && weekNumberEl instanceof HTMLAnchorElement) {
+					this.enhanceLink(
+						weekNumberEl,
+						periodicNote.path,
+						periodicNote.basename
+					)
+				} else {
+					weekNumberEl.setAttribute('title', 'Click to open weekly note');
+
+					weekNumberEl.addEventListener('click', () => {
+						this.openWeeklyNote(info.date);
+					});
 				}
-
-				weekNumberEl.addEventListener('click', () => {
-					this.openWeeklyNote(info.date);
-				});
 			},
 			dayHeaderDidMount: (info) => {
 				const headerEl = info.el;
-				headerEl.style.cursor = 'pointer';
-				headerEl.setAttribute('title', 'Click to open daily note');
+				const link = headerEl.querySelector('a');
 
-				if (this.hasPeriodicNote(info.date, 'day')) {
-					headerEl.classList.add('has-periodic-note');
+				// When in the month grid full calendar will pass in epoch + n days to render the top row, these should
+				// not be linked to notes
+				const actualDate = dFns.isWithinInterval(
+					info.date,
+					{
+						start: this.calendar?.view?.activeStart!,
+						end: this.calendar?.view?.activeEnd!
+					}
+				);
+
+				if (!actualDate) {
+					return;
 				}
 
-				headerEl.addEventListener('click', () => {
-					this.openDailyNote(info.date);
-				});
+				const periodicNote = this.getPeriodicNote('day', info.date);
+
+				if (periodicNote && link) {
+					this.enhanceLink(
+						link,
+						periodicNote.path,
+						periodicNote.basename
+					)
+				} else {
+					headerEl.style.cursor = 'pointer';
+					headerEl.setAttribute('title', 'Click to open daily note');
+
+					headerEl.addEventListener('click', () => {
+						this.openDailyNote(info.date);
+					});
+				}
 			},
 			buttonText: {
 				today: 'Today',
@@ -310,16 +317,8 @@ export class CalendarView {
 					if (titleEl) {
 						// Create the link element with Obsidian-specific attributes
 						const linkEl = document.createElement('a');
-						linkEl.className = 'internal-link data-link-icon data-link-icon-after data-link-text';
 						linkEl.href = sourcePath;
-						linkEl.setAttribute('data-href', sourcePath);
-						linkEl.setAttribute('data-tooltip-position', 'top');
-						linkEl.setAttribute('aria-label', sourcePath);
-						linkEl.setAttribute('data-link-path', sourcePath);
-						linkEl.style.setProperty('--data-link-path', sourcePath);
-						linkEl.target = '_blank';
-						linkEl.rel = 'noopener nofollow';
-
+						this.enhanceLink(linkEl, sourcePath);
 						// Move the text content to the link
 						linkEl.textContent = info.event.title;
 						titleEl.textContent = '';
@@ -335,15 +334,8 @@ export class CalendarView {
 					if (file) {
 						// Replace the day number with a hoverable link
 						const linkEl = dayNumberEl
-						linkEl.className += ' internal-link data-link-icon data-link-icon-after data-link-text';
 						linkEl.href = file.path;
-						linkEl.setAttribute('data-href', file.path);
-						linkEl.setAttribute('data-tooltip-position', 'top');
-						linkEl.setAttribute('aria-label', file.path);
-						linkEl.setAttribute('data-link-path', file.path);
-						linkEl.style.setProperty('--data-link-path', file.path);
-						linkEl.target = '_blank';
-						linkEl.rel = 'noopener nofollow';
+						this.enhanceLink(linkEl, file.path, file.basename);
 					} else {
 						dayNumberEl.setAttribute('title', 'Click to open daily note');
 						dayNumberEl.style.cursor = 'pointer';
@@ -357,6 +349,17 @@ export class CalendarView {
 		});
 
 		this.calendar.render();
+	}
+
+	private enhanceLink(anchor: HTMLAnchorElement, path: string, label: string | undefined = undefined) {
+		anchor.className += ' internal-link data-link-icon data-link-icon-after data-link-text';
+		anchor.setAttribute('data-href', path);
+		anchor.setAttribute('data-tooltip-position', 'top');
+		anchor.setAttribute('aria-label', label ?? path);
+		anchor.setAttribute('data-link-path', path);
+		anchor.style.setProperty('--data-link-path', path);
+		anchor.target = '_blank';
+		anchor.rel = 'noopener nofollow';
 	}
 
 	private getInitialView() {
