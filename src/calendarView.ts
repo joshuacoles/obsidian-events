@@ -4,8 +4,8 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import {App, TFile, Notice, moment} from 'obsidian';
+import {createElement} from '@fullcalendar/core/preact';
 import type {Moment} from 'moment';
-import {createElement} from "@fullcalendar/core/preact";
 
 type Granularity = "day" | "week" | "month" | "quarter" | "year";
 
@@ -83,72 +83,6 @@ export class CalendarView {
 		return this.periodicNotes.getPeriodicNote(granularity, moment(date)) != null;
 	}
 
-	private titleObserver!: MutationObserver
-
-    private setTitle() {
-		const titleEl = this.container.querySelector('.fc-toolbar-title') as HTMLElement;
-		titleEl.querySelectorAll('span').forEach(x => x.remove());
-
-        // Get current date from calendar
-        const currentDate = this.calendar?.getDate();
-        if (!currentDate) return;
-
-        // Store the raw text content
-        const titleText = titleEl.textContent || '';
-
-        // Re-process the title with clickable elements
-        titleEl.innerHTML = titleText.replace(/January|February|March|April|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/g, (match) => {
-            return this.clickableMonth(titleEl, match, currentDate).outerHTML;
-        }).replace(/\d{4}/g, (match) => {
-            return this.clickableYear(titleEl, match, currentDate).outerHTML;
-        });
-    }
-
-	private setupTitleClickHandlers() {
-		const titleEl = this.container.querySelector('.fc-toolbar-title') as HTMLElement;
-		this.titleObserver = new MutationObserver((changes) => {
-			// Check if any of the changes contain text nodes
-			const hasTextNodes = changes.some(change => 
-				Array.from(change.addedNodes).some(node =>
-					node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== ''
-				)
-			);
-
-			if (hasTextNodes) {
-                this.setTitle();
-			}
-		});
-
-        this.setTitle();
-		this.titleObserver.observe(titleEl, { childList: true });
-	}
-
-	private clickableMonth(container: HTMLElement, monthText: string, date: Date): HTMLElement {
-		const monthEl = document.createElement('span');
-		monthEl.textContent = monthText;
-		monthEl.className = 'clickable-title month';
-		monthEl.title = 'Click to open monthly note';
-		if (this.hasPeriodicNote(date, 'month')) {
-			monthEl.classList.add('has-periodic-note');
-		}
-		monthEl.addEventListener('click', () => this.openMonthlyNote(date));
-
-		return monthEl;
-	}
-
-	private clickableYear(container: HTMLElement, yearText: string, date: Date): HTMLElement {
-		const yearEl = document.createElement('span');
-		yearEl.textContent = yearText;
-		yearEl.className = 'clickable-title year';
-		yearEl.title = 'Click to open yearly note';
-		if (this.hasPeriodicNote(date, 'year')) {
-			yearEl.classList.add('has-periodic-note');
-		}
-		yearEl.addEventListener('click', () => this.openYearlyNote(date));
-
-		return yearEl;
-	}
-
 	render() {
 		// Clear container
 		this.container.empty();
@@ -168,13 +102,80 @@ export class CalendarView {
 			events: this.convertToFullCalendarEvents(),
 			initialDate: this.settings.defaultDate ? new Date(this.settings.defaultDate) : new Date(),
 			height: 'auto',
-			locale: 'en-GB',  // Use UK English locale
-			firstDay: 1,      // Week starts on Monday
-			weekNumbers: true, // Show week numbers
+			locale: 'en-GB',
+			firstDay: 1,
+			weekNumbers: true,
 			weekNumberFormat: {week: 'numeric'},
-			titleFormat: (x) => {
-				const type = this.calendar?.view.type;
-				return createElement('span', {}, 'Bob')
+			titleFormat: (date) => {
+				const currentDate = moment(date.date).toDate();
+				const type = this.calendar?.view.type || this.getInitialView();
+
+				// Format the date parts
+				const month = currentDate.toLocaleString('en-GB', { month: 'long' });
+				const shortMonth = currentDate.toLocaleString('en-GB', { month: 'short' });
+				const day = currentDate.getDate();
+				const year = currentDate.getFullYear();
+
+				// Create clickable elements
+				const monthEl = createElement('span', {
+					className: `clickable-title month${this.hasPeriodicNote(currentDate, 'month') ? ' has-periodic-note' : ''}`,
+					'data-date': currentDate.toISOString(),
+					'data-type': 'month',
+					title: 'Click to open monthly note'
+				}, month);
+
+				const yearEl = createElement('span', {
+					className: `clickable-title year${this.hasPeriodicNote(currentDate, 'year') ? ' has-periodic-note' : ''}`,
+					'data-date': currentDate.toISOString(),
+					'data-type': 'year',
+					title: 'Click to open yearly note'
+				}, year);
+
+				// Return different formats based on view type
+				switch (type) {
+					case 'dayGridMonth':
+						// Month view: "January 2024"
+						return createElement('span', {}, monthEl, ' ', yearEl);
+						
+					case 'timeGridWeek':
+					case 'listWeek': {
+						// Week view: "Jan 1 – 7, 2024"
+						const endDate = new Date(currentDate);
+						endDate.setDate(currentDate.getDate() + 6);
+						const endDay = endDate.getDate();
+						return createElement('span', {}, 
+							shortMonth, ' ', day, ' – ', endDay, ', ', yearEl
+						);
+					}
+						
+					case 'timeGridDay':
+						// Day view: "January 1, 2024"
+						return createElement('span', {}, 
+							monthEl, ' ', day, ', ', yearEl
+						);
+						
+					default:
+						return createElement('span', {}, monthEl, ' ', yearEl);
+				}
+			},
+			datesSet: () => {
+				// Add click handlers to the title elements
+				const titleEl = this.container.querySelector('.fc-toolbar-title');
+				if (!titleEl) return;
+
+				titleEl.querySelectorAll('.clickable-title').forEach(el => {
+					el.addEventListener('click', (e) => {
+						const target = e.target as HTMLElement;
+						const date = new Date(target.dataset.date || '');
+						const type = target.dataset.type as Granularity;
+						
+						if (type === 'month') {
+							this.openMonthlyNote(date);
+						} else if (type === 'year') {
+							this.openYearlyNote(date);
+						}
+					});
+				});
 			},
 			weekNumberDidMount: (info) => {
 				const weekNumberEl = info.el;
@@ -240,7 +241,6 @@ export class CalendarView {
 		});
 
 		this.calendar.render();
-		// this.setupTitleClickHandlers();
 	}
 
 	private getInitialView() {
