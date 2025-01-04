@@ -26,8 +26,10 @@ export default class CalendarPlugin extends Plugin {
 		await this.loadSettings();
 		this.periodicNotes = (this.app as any).plugins.plugins['periodic-notes'] as PeriodicNotesPlugin | undefined;
 
-		// Initialize ICS sources
-		this.icsSources = this.settings.icsUrls.map(url => new ICSEventSource(url));
+		// Initialize ICS sources with vault and calendar folder
+		this.icsSources = this.settings.icsUrls.map(url => 
+			new ICSEventSource(url, this.app, this.settings.calendarFolder)
+		);
 
 		// Register the calendar code block processor
 		this.registerMarkdownCodeBlockProcessor('calendar', async (source, el, ctx) => {

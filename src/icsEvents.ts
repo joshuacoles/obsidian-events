@@ -1,6 +1,6 @@
 import ICAL from 'ical.js';
 import { CalendarEvent } from './types';
-import { Notice } from 'obsidian';
+import {App, Notice, TFile, Vault} from 'obsidian';
 import * as dFns from 'date-fns';
 
 export class ICSEventSource {
@@ -9,9 +9,37 @@ export class ICSEventSource {
     private lastFetch: Date | null = null;
     private fetchInterval: number = 5 * 60 * 1000; // 5 minutes
     private readonly expandMonths = 6; // How many months of recurring events to expand
+    private app: App;
+    private calendarFolder: string;
 
-    constructor(url: string) {
+    constructor(url: string, app: App, calendarFolder: string) {
         this.url = url;
+        this.app = app;
+        this.calendarFolder = calendarFolder;
+    }
+
+    private async findLocalIcsIds(): Promise<Set<string>> {
+        const icsIds = new Set<string>();
+        
+        // Get all markdown files in the calendar folder
+        const files = this.app.vault.getMarkdownFiles()
+            .filter(file => file.path.startsWith(this.calendarFolder + '/'));
+
+        for (const file of files) {
+            const cache = this.app.metadataCache.getFileCache(file);
+            const frontmatter = cache?.frontmatter;
+            
+            // Check for both individual events and recurring event instances
+            if (frontmatter?.icsId) {
+                icsIds.add(frontmatter.icsId);
+            }
+
+            if (frontmatter?.icsBaseEventId && frontmatter?.icsInstanceId) {
+                icsIds.add(`${frontmatter.icsBaseEventId}-${frontmatter.icsInstanceId}`);
+            }
+        }
+
+        return icsIds;
     }
 
     async getEvents(): Promise<CalendarEvent[]> {
@@ -36,6 +64,9 @@ export class ICSEventSource {
             }
             const icsData = await response.text();
             
+            // Get the set of ICS IDs that have local files
+            const localIcsIds = await this.findLocalIcsIds();
+            
             // Parse the ICS data
             const jcalData = ICAL.parse(icsData);
             const comp = new ICAL.Component(jcalData);
@@ -54,9 +85,11 @@ export class ICSEventSource {
             this.events = vevents.flatMap(vevent => {
                 const event = new ICAL.Event(vevent);
                 
-                // If it's not a recurring event, just convert it directly
+                // If it's not a recurring event, check if we have a local file
                 if (!event.isRecurring()) {
-                    return [this.convertICALEventToCalendarEvent(event)];
+                    const calEvent = this.convertICALEventToCalendarEvent(event);
+                    const eventId = calEvent.sourcePath?.split('#')[1];
+                    return localIcsIds.has(eventId!) ? [] : [calEvent];
                 }
 
                 // For recurring events, expand them within our date range
@@ -75,9 +108,13 @@ export class ICSEventSource {
                     if (next.compare(rangeStart) >= 0) {
                         const instance = event.getOccurrenceDetails(next);
                         
-                        // Skip cancelled occurrences
+                        // Skip cancelled occurrences and events with local files
                         if (!instance.item.recurrenceId || !event.isRecurrenceException(instance.item.recurrenceId)) {
-                            instances.push(this.convertICALEventToCalendarEvent(instance));
+                            const calEvent = this.convertICALEventToCalendarEvent(instance);
+                            const eventId = calEvent.sourcePath?.split('#')[1];
+                            if (!localIcsIds.has(eventId!)) {
+                                instances.push(calEvent);
+                            }
                         }
                     }
 
