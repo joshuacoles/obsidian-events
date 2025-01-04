@@ -1,7 +1,7 @@
 # Events Calendar Plugin
 
 A plugin inspired by the [Full Calendar Plugin](https://github.com/obsidian-community/obsidian-full-calendar)
-but expanded to fit my needs. This is currently
+but altered to fit my needs. This includes the styling from which acts as a base for this plugin.
 
 ## Possible
 
