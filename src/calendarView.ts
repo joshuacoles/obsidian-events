@@ -289,22 +289,7 @@ export class CalendarView {
 			},
 			eventDidMount: (info) => {
 				const sourcePath = info.event.extendedProps.sourcePath;
-				if (sourcePath) {
-					info.el.style.cursor = 'pointer';
-
-					// Get the title element
-					const titleEl = info.el.querySelector('.fc-event-title');
-					if (titleEl) {
-						// Create the link element with Obsidian-specific attributes
-						const linkEl = document.createElement('a');
-						linkEl.href = sourcePath;
-						this.enhanceLink(linkEl, sourcePath);
-						// Move the text content to the link
-						linkEl.textContent = info.event.title;
-						titleEl.textContent = '';
-						titleEl.appendChild(linkEl);
-					}
-				}
+				this.enhanceLink(info.el as HTMLAnchorElement, sourcePath);
 			},
 			dayCellDidMount: (info) => {
 				const dayNumberEl = info.el.querySelector('.fc-daygrid-day-number') as HTMLAnchorElement;
