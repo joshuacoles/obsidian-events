@@ -89,7 +89,7 @@ export class CreateEventModal extends Modal {
                 ...(this.event.endDate && {
                     endTime: dFns.format(this.event.endDate, "yyyy-MM-dd'T'HH:mm:ssXXX")
                 }),
-                allDay: this.event.allDay,
+                ...(this.event.allDay ? {allDay: this.event.allDay} : {}),
                 ...(this.event.description && { description: this.event.description }),
                 ...(icsId && { 
                     icsId: icsId,
