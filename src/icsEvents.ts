@@ -1,3 +1,4 @@
+// @ts-ignore
 import ICAL from 'ical.js';
 import { CalendarEvent } from './types';
 import {App, Notice, TFile, Vault} from 'obsidian';
@@ -82,7 +83,7 @@ export class ICSEventSource {
             const rangeEnd = ICAL.Time.fromDateTimeString(expandEnd.toISOString());
 
             // Process all events
-            this.events = vevents.flatMap(vevent => {
+            this.events = vevents.flatMap((vevent: any) => {
                 const event = new ICAL.Event(vevent);
                 
                 // If it's not a recurring event, check if we have a local file

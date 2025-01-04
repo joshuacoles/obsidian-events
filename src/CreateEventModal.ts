@@ -35,7 +35,7 @@ export class CreateEventModal extends Modal {
             new Setting(contentEl)
                 .setName('End')
                 .addText(text => text
-                    .setValue(dFns.format(this.event.endDate, 'yyyy-MM-dd HH:mm'))
+                    .setValue(dFns.format(this.event.endDate!, 'yyyy-MM-dd HH:mm'))
                     .setDisabled(true));
         }
 
