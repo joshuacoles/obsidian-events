@@ -47,7 +47,7 @@ export class CreateEventModal extends Modal {
                     .setDisabled(true));
         }
 
-        // Add buttons
+		// Add buttons
         const buttonDiv = contentEl.createDiv('modal-button-container');
         buttonDiv.style.display = 'flex';
         buttonDiv.style.justifyContent = 'flex-end';
@@ -91,7 +91,14 @@ export class CreateEventModal extends Modal {
                 }),
                 allDay: this.event.allDay,
                 ...(this.event.description && { description: this.event.description }),
-                ...(icsId && { icsId: icsId })
+                ...(icsId && { 
+                    icsId: icsId,
+                    // If this is a recurring event instance, store both the base event ID and the instance ID
+                    ...(icsId.includes('-') && {
+                        icsBaseEventId: icsId.split('-')[0],
+                        icsInstanceId: icsId.split('-')[1]
+                    })
+                })
             };
 
             // Create file content
