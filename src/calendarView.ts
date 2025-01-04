@@ -117,14 +117,16 @@ export class CalendarView {
 							className: `clickable-title month${this.hasPeriodicNote(currentDate, 'month') ? ' has-periodic-note' : ''}`,
 							'data-date': currentDate.toISOString(),
 							'data-type': 'month',
-							title: 'Click to open monthly note'
+							title: 'Click to open monthly note',
+							// key: currentDate.toISOString()
 						}, month);
 
 						const yearEl = createElement('span', {
 							className: `clickable-title year${this.hasPeriodicNote(currentDate, 'year') ? ' has-periodic-note' : ''}`,
 							'data-date': currentDate.toISOString(),
 							'data-type': 'year',
-							title: 'Click to open yearly note'
+							title: 'Click to open yearly note',
+							// key: currentDate.toISOString()
 						}, year);
 
 						return createElement('span', {}, monthEl, ' ', yearEl);

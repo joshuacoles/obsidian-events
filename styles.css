@@ -130,7 +130,8 @@ If your plugin does not need CSS, delete this file.
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 4px;
-    transition: background-color 0.15s ease-in-out, opacity 0.15s ease-in-out;
+    transition: background-color 0.15s ease-in-out;
+    color: var(--text-normal);
 }
 
 .calendar-container .clickable-title:hover {
@@ -138,11 +139,11 @@ If your plugin does not need CSS, delete this file.
 }
 
 .calendar-container .clickable-title.has-periodic-note {
-    background-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent) !important;
-    opacity: 0.5;
+    background-color: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
+    color: var(--text-normal);
 }
 
 .calendar-container .clickable-title.has-periodic-note:hover {
-    opacity: 0.8;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
 }
