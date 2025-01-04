@@ -1,17 +1,19 @@
-import { App, Modal, Setting, moment } from 'obsidian';
+import { App, Modal, Setting, moment, Notice } from 'obsidian';
 import { EventFileFormat } from './types';
 
 export class AddEventModal extends Modal {
     private startDate: moment.Moment;
-    private endDate: moment.Moment | null = null;
+    private endDate: moment.Moment;
     private title: string = '';
     private description: string = '';
+    private isAllDay: boolean = false;
     private onSubmit: (event: EventFileFormat) => void;
 
     constructor(app: App, onSubmit: (event: EventFileFormat) => void) {
         super(app);
         this.onSubmit = onSubmit;
-        this.startDate = moment();
+        this.startDate = moment().startOf('day');
+        this.endDate = moment().startOf('day');
     }
 
     onOpen() {
@@ -27,9 +29,29 @@ export class AddEventModal extends Modal {
                 .setPlaceholder('Event title')
                 .onChange(value => this.title = value));
 
+        // All day toggle
+        new Setting(contentEl)
+            .setName('All Day Event')
+            .setDesc('Toggle for all-day event')
+            .addToggle(toggle => toggle
+                .setValue(this.isAllDay)
+                .onChange(value => {
+                    this.isAllDay = value;
+                    // Update visibility of time pickers
+                    const timeInputs = contentEl.querySelectorAll('.time-input');
+                    timeInputs.forEach(el => {
+                        (el as HTMLElement).style.display = value ? 'none' : 'block';
+                    });
+                    if (value) {
+                        // For all-day events, set times to start and end of day
+                        this.startDate = this.startDate.clone().startOf('day');
+                        this.endDate = this.endDate.clone().endOf('day');
+                    }
+                }));
+
         // Start date container
         const startDateContainer = contentEl.createDiv('date-time-container');
-        startDateContainer.createEl('h3', { text: 'Start Time' });
+        startDateContainer.createEl('h3', { text: 'Start' });
 
         // Start date picker
         new Setting(startDateContainer)
@@ -38,13 +60,18 @@ export class AddEventModal extends Modal {
                 text.inputEl.type = 'date';
                 text.setValue(this.startDate.format('YYYY-MM-DD'));
                 text.onChange(value => {
-                    const time = this.startDate.format('HH:mm');
-                    this.startDate = moment(value + ' ' + time, 'YYYY-MM-DD HH:mm');
+                    if (this.isAllDay) {
+                        this.startDate = moment(value).startOf('day');
+                    } else {
+                        const time = this.startDate.format('HH:mm');
+                        this.startDate = moment(value + ' ' + time, 'YYYY-MM-DD HH:mm');
+                    }
                 });
             });
 
         // Start time picker
         new Setting(startDateContainer)
+            .setClass('time-input')
             .setName('Time')
             .addText(text => {
                 text.inputEl.type = 'time';
@@ -55,33 +82,20 @@ export class AddEventModal extends Modal {
                 });
             });
 
-        // End date toggle and container
-        const endDateToggle = new Setting(contentEl)
-            .setName('Add End Time')
-            .addToggle(toggle => toggle
-                .setValue(false)
-                .onChange(value => {
-                    endDateContainer.style.display = value ? 'block' : 'none';
-                    if (value && !this.endDate) {
-                        this.endDate = this.startDate.clone().add(1, 'hour');
-                    } else if (!value) {
-                        this.endDate = null;
-                    }
-                }));
-
         // End date container
         const endDateContainer = contentEl.createDiv('date-time-container');
-        endDateContainer.style.display = 'none';
-        endDateContainer.createEl('h3', { text: 'End Time' });
+        endDateContainer.createEl('h3', { text: 'End' });
 
         // End date picker
         new Setting(endDateContainer)
             .setName('Date')
             .addText(text => {
                 text.inputEl.type = 'date';
-                text.setValue(this.startDate.format('YYYY-MM-DD'));
+                text.setValue(this.endDate.format('YYYY-MM-DD'));
                 text.onChange(value => {
-                    if (this.endDate) {
+                    if (this.isAllDay) {
+                        this.endDate = moment(value).endOf('day');
+                    } else {
                         const time = this.endDate.format('HH:mm');
                         this.endDate = moment(value + ' ' + time, 'YYYY-MM-DD HH:mm');
                     }
@@ -90,15 +104,14 @@ export class AddEventModal extends Modal {
 
         // End time picker
         new Setting(endDateContainer)
+            .setClass('time-input')
             .setName('Time')
             .addText(text => {
                 text.inputEl.type = 'time';
-                text.setValue(this.startDate.clone().add(1, 'hour').format('HH:mm'));
+                text.setValue(this.endDate.format('HH:mm'));
                 text.onChange(value => {
-                    if (this.endDate) {
-                        const date = this.endDate.format('YYYY-MM-DD');
-                        this.endDate = moment(date + ' ' + value, 'YYYY-MM-DD HH:mm');
-                    }
+                    const date = this.endDate.format('YYYY-MM-DD');
+                    this.endDate = moment(date + ' ' + value, 'YYYY-MM-DD HH:mm');
                 });
             });
 
@@ -122,13 +135,25 @@ export class AddEventModal extends Modal {
                         return;
                     }
 
-                    const event: EventFileFormat = {
-                        startTime: this.startDate.toISOString(),
-                        title: this.title,
-                    };
+                    // Generate filename based on start date and title
+                    const fileDate = this.startDate.format('YYYY-MM-DD');
+                    const safeTitle = this.title.replace(/[^a-zA-Z0-9]/g, '-');
+                    const filename = `${fileDate}-${safeTitle}`;
 
-                    if (this.endDate) {
-                        event.endTime = this.endDate.toISOString();
+                    let event: any;
+                    if (this.isAllDay) {
+                        event = {
+                            title: this.title,
+                            allDay: true,
+                            date: this.startDate.format('YYYY-MM-DD'),
+                            endDate: this.endDate.format('YYYY-MM-DD')
+                        };
+                    } else {
+                        event = {
+                            startTime: this.startDate.toISOString(),
+                            endTime: this.endDate.toISOString(),
+                            title: this.title
+                        };
                     }
 
                     if (this.description) {
@@ -159,13 +184,11 @@ export class AddEventModal extends Modal {
 
     private validateInput(): boolean {
         if (!this.title) {
-            // @ts-ignore
             new Notice('Title is required');
             return false;
         }
 
-        if (this.endDate && this.endDate.isBefore(this.startDate)) {
-            // @ts-ignore
+        if (this.endDate.isBefore(this.startDate)) {
             new Notice('End time must be after start time');
             return false;
         }

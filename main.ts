@@ -1,4 +1,4 @@
-import { App, Plugin, MarkdownPostProcessorContext, TFile } from 'obsidian';
+import { App, Plugin, MarkdownPostProcessorContext, TFile, Notice } from 'obsidian';
 import { CalendarBlockSettings, EventFileFormat } from './src/types';
 import { EventParser } from './src/eventParser';
 import { CalendarView } from './src/calendarView';
@@ -15,7 +15,7 @@ const DEFAULT_SETTINGS: CalendarPluginSettings = {
 }
 
 export default class CalendarPlugin extends Plugin {
-	settings: CalendarPluginSettings;
+	private settings: CalendarPluginSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -53,30 +53,26 @@ export default class CalendarPlugin extends Plugin {
 		});
 	}
 
-	private async createEventFile(event: EventFileFormat) {
+	private async createEventFile(event: any) {
 		try {
 			// Ensure calendar folder exists
 			if (!this.app.vault.getAbstractFileByPath(this.settings.calendarFolder)) {
 				await this.app.vault.createFolder(this.settings.calendarFolder);
 			}
 
-			// Generate filename from title or date
-			const date = new Date(event.startTime);
-			const filename = event.title ?
-				`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${event.title}` :
-				`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-event`;
+			// Generate filename from date and title
+			const safeTitle = event.title.replace(/[^a-zA-Z0-9]/g, '-');
+			const date = event.allDay ? event.date : event.startTime.split('T')[0];
+			const filename = `${date} ${safeTitle}`;
 
 			// Create file content with frontmatter
 			const content = [
 				'---',
-				'startTime: ' + event.startTime,
-				event.endTime ? 'endTime: ' + event.endTime : null,
-				event.title ? 'title: ' + event.title : null,
-				event.description ? 'description: ' + event.description : null,
+				...Object.entries(event).map(([key, value]) => `${key}: ${value}`),
 				'---',
 				'',
 				event.description || ''
-			].filter(line => line !== null).join('\n');
+			].join('\n');
 
 			// Create the file
 			const filePath = `${this.settings.calendarFolder}/${filename}.md`;
@@ -86,7 +82,6 @@ export default class CalendarPlugin extends Plugin {
 			await this.app.workspace.getLeaf(false).openFile(file);
 		} catch (error) {
 			console.error('Error creating event file:', error);
-			// @ts-ignore
 			new Notice('Failed to create event file');
 		}
 	}
