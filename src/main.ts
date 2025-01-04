@@ -1,18 +1,16 @@
 import {Plugin, Notice} from 'obsidian';
-import {CalendarBlockSettings} from './types';
+import {CalendarBlockSettings, CalendarViewKind} from './types';
 import {EventParser} from './eventParser';
 import {CalendarView} from './calendarView';
 import {ICSEventSource} from './icsEvents';
 import {PeriodicNotesPlugin} from './periodicNotes';
 
 interface CalendarPluginSettings {
-	defaultView: 'month' | 'week' | 'day';
 	calendarFolder: string;
 	icsUrls: string[];
 }
 
 const DEFAULT_SETTINGS: CalendarPluginSettings = {
-	defaultView: 'month',
 	calendarFolder: 'Calendar',
 	icsUrls: []
 }
@@ -34,10 +32,24 @@ export default class CalendarPlugin extends Plugin {
 		// Register the calendar code block processor
 		this.registerMarkdownCodeBlockProcessor('calendar', async (source, el, ctx) => {
 			try {
-				// Parse the code block settings
-				const blockSettings: CalendarBlockSettings = {
-					view: this.settings.defaultView,
-					...JSON.parse(source || '{}')
+				this.periodicNotes ||= (this.app as any).plugins.plugins['periodic-notes'] as PeriodicNotesPlugin | undefined;
+
+				const periodic = this.periodicNotes?.findInCache(ctx.sourcePath);
+				const sourceOpts = JSON.parse(source || '{}');
+				const { views, ...rest } = sourceOpts;
+
+				const blockSettings: CalendarBlockSettings = periodic ? {
+					views: (views ?? ['dayGrid']).map((x: CalendarViewKind) => [periodic.granularity, x]),
+					fixed: true,
+					date: periodic.date,
+					showTitle: false,
+					...rest
+				} : {
+					views: [['month', 'dayGrid'], ['week', 'timeGrid'], ['day', 'timeGrid'], ['week', 'list']],
+					fixed: false,
+					date: new Date(),
+					showTitle: true,
+					...sourceOpts,
 				};
 
 				// Get events from all sources
