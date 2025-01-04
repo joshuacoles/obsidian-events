@@ -57,7 +57,8 @@ export class CalendarView {
 			return null;
 		}
 
-		return this.periodicNotes.getPeriodicNote(granularity, moment(date))
+		// @ts-ignore Version issues mean this has an error
+		return this.periodicNotes.getPeriodicNote(granularity, moment(date));
 	}
 
 	private hasPeriodicNote(date: Date, granularity: Granularity): boolean {

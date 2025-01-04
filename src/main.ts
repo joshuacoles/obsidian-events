@@ -1,9 +1,9 @@
 import {Plugin, Notice} from 'obsidian';
-import {CalendarBlockSettings, CalendarViewKind, EventFileFormat} from './src/types';
-import {EventParser} from './src/eventParser';
-import {CalendarView} from './src/calendarView';
-import {AddEventModal} from './src/addEventModal';
-import {PeriodicNotesPlugin} from "./src/periodicNotes";
+import {CalendarBlockSettings, CalendarViewKind, EventFileFormat} from './types';
+import {EventParser} from './eventParser';
+import {CalendarView} from './calendarView';
+import {AddEventModal} from './addEventModal';
+import {PeriodicNotesPlugin} from "./periodicNotes";
 
 interface CalendarPluginSettings {
 	defaultView: string;
