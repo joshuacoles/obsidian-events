@@ -7,21 +7,25 @@ import {App, TFile, Notice, moment} from 'obsidian';
 import {createElement} from '@fullcalendar/core/preact';
 import * as dFns from 'date-fns';
 import {Granularity, PeriodicNotesPlugin} from './periodicNotes';
+import CalendarPlugin from "./main";
 
 export class CalendarView {
 	private container: HTMLElement;
 	private events: CalendarEvent[];
 	private settings: CalendarBlockSettings;
 	private calendar: Calendar | null = null;
+
+	private readonly plugin: CalendarPlugin;
 	private readonly app: App;
 	private readonly periodicNotes: PeriodicNotesPlugin | undefined;
 
-	constructor(app: App, container: HTMLElement, events: CalendarEvent[], settings: CalendarBlockSettings) {
-		this.app = app;
+	constructor(plugin: CalendarPlugin, container: HTMLElement, events: CalendarEvent[], settings: CalendarBlockSettings) {
+		this.plugin = plugin;
+		this.app = plugin.app;
+		this.periodicNotes = plugin.periodicNotes;
 		this.container = container;
 		this.events = events;
 		this.settings = settings;
-		this.periodicNotes = (this.app as any).plugins.plugins['periodic-notes'] as PeriodicNotesPlugin | undefined;
 	}
 
 	private convertToFullCalendarEvents() {

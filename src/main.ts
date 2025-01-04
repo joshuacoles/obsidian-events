@@ -17,7 +17,7 @@ const DEFAULT_SETTINGS: CalendarPluginSettings = {
 
 export default class CalendarPlugin extends Plugin {
 	private settings: CalendarPluginSettings;
-	private periodicNotes?: PeriodicNotesPlugin;
+	periodicNotes?: PeriodicNotesPlugin;
 
 	async onload() {
 		await this.loadSettings();
@@ -49,7 +49,7 @@ export default class CalendarPlugin extends Plugin {
 				const events = await EventParser.parseEvents(this.app.vault, this.settings.calendarFolder);
 
 				// Render the calendar
-				const calendar = new CalendarView(this.app, el, events, blockSettings);
+				const calendar = new CalendarView(this, el, events, blockSettings);
 				calendar.render();
 			} catch (error) {
 				console.error('Error rendering calendar:', error);
