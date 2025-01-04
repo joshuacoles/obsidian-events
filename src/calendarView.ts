@@ -46,35 +46,18 @@ export class CalendarView {
 		}));
 	}
 
-	private async openPeriodicNote(date: Date, granularity: Granularity) {
+	private async openPeriodicNote(granularity: Granularity, date: Date) {
 		if (!this.periodicNotes) {
 			new Notice('Periodic Notes plugin is not installed or enabled');
 			return;
 		}
 
 		try {
-			const moment = (window as any).moment(date);
-			await this.periodicNotes.openPeriodicNote(granularity, moment);
+			await this.periodicNotes.openPeriodicNote(granularity, moment(date));
 		} catch (error) {
 			console.error(`Error opening ${granularity} note:`, error);
 			new Notice(`Failed to open ${granularity} note`);
 		}
-	}
-
-	private async openDailyNote(date: Date) {
-		await this.openPeriodicNote(date, 'day');
-	}
-
-	private async openWeeklyNote(date: Date) {
-		await this.openPeriodicNote(date, 'week');
-	}
-
-	private async openMonthlyNote(date: Date) {
-		await this.openPeriodicNote(date, 'month');
-	}
-
-	private async openYearlyNote(date: Date) {
-		await this.openPeriodicNote(date, 'year');
 	}
 
 	private getPeriodicNote(granularity: Granularity, date: Date): TFile | null {
@@ -109,7 +92,7 @@ export class CalendarView {
 
 	private createClickableTitle(text: string, date: Date, type: Granularity, hasNote: boolean) {
 		if (hasNote) {
-			const file = this.periodicNotes?.getPeriodicNote(type, moment(date));
+			const file = this.getPeriodicNote(type, date)
 			if (file) {
 				return this.createHoverableLink(file.path, text);
 			}
@@ -120,7 +103,7 @@ export class CalendarView {
 			'data-date': date.toISOString(),
 			'data-type': type,
 			title: `Click to open ${type}ly note`,
-			onClick: () => this.periodicNotes?.openPeriodicNote(type, date)
+			onClick: () => this.openPeriodicNote(type, date)
 		}, text);
 	}
 
@@ -250,10 +233,7 @@ export class CalendarView {
 					)
 				} else {
 					weekNumberEl.setAttribute('title', 'Click to open weekly note');
-
-					weekNumberEl.addEventListener('click', () => {
-						this.openWeeklyNote(info.date);
-					});
+					weekNumberEl.addEventListener('click', () => this.openPeriodicNote('week', info.date));
 				}
 			},
 			dayHeaderDidMount: (info) => {
@@ -287,7 +267,7 @@ export class CalendarView {
 					headerEl.setAttribute('title', 'Click to open daily note');
 
 					headerEl.addEventListener('click', () => {
-						this.openDailyNote(info.date);
+						this.openPeriodicNote('day', info.date)
 					});
 				}
 			},
@@ -339,9 +319,7 @@ export class CalendarView {
 					} else {
 						dayNumberEl.setAttribute('title', 'Click to open daily note');
 						dayNumberEl.style.cursor = 'pointer';
-						dayNumberEl.addEventListener('click', () => {
-							this.openDailyNote(info.date);
-						});
+						dayNumberEl.addEventListener('click', () => this.openPeriodicNote('day', info.date));
 					}
 				}
 			},
