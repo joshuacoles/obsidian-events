@@ -106,57 +106,137 @@ export class CalendarView {
 			firstDay: 1,
 			weekNumbers: true,
 			weekNumberFormat: {week: 'numeric'},
-			titleFormat: (date) => {
-				const currentDate = moment(date.date).toDate();
-				const type = this.calendar?.view.type || this.getInitialView();
+			views: {
+				dayGridMonth: {
+					titleFormat: (date) => {
+						const currentDate = moment(date.date).toDate();
+						const month = currentDate.toLocaleString('en-GB', { month: 'long' });
+						const year = currentDate.getFullYear();
 
-				// Format the date parts
-				const month = currentDate.toLocaleString('en-GB', { month: 'long' });
-				const shortMonth = currentDate.toLocaleString('en-GB', { month: 'short' });
-				const day = currentDate.getDate();
-				const year = currentDate.getFullYear();
+						const monthEl = createElement('span', {
+							className: `clickable-title month${this.hasPeriodicNote(currentDate, 'month') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'month',
+							title: 'Click to open monthly note'
+						}, month);
 
-				// Create clickable elements
-				const monthEl = createElement('span', {
-					className: `clickable-title month${this.hasPeriodicNote(currentDate, 'month') ? ' has-periodic-note' : ''}`,
-					'data-date': currentDate.toISOString(),
-					'data-type': 'month',
-					title: 'Click to open monthly note'
-				}, month);
+						const yearEl = createElement('span', {
+							className: `clickable-title year${this.hasPeriodicNote(currentDate, 'year') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'year',
+							title: 'Click to open yearly note'
+						}, year);
 
-				const yearEl = createElement('span', {
-					className: `clickable-title year${this.hasPeriodicNote(currentDate, 'year') ? ' has-periodic-note' : ''}`,
-					'data-date': currentDate.toISOString(),
-					'data-type': 'year',
-					title: 'Click to open yearly note'
-				}, year);
-
-				// Return different formats based on view type
-				switch (type) {
-					case 'dayGridMonth':
-						// Month view: "January 2024"
 						return createElement('span', {}, monthEl, ' ', yearEl);
-						
-					case 'timeGridWeek':
-					case 'listWeek': {
-						// Week view: "Jan 1 – 7, 2024"
+					}
+				},
+				timeGridWeek: {
+					titleFormat: (date) => {
+						const currentDate = moment(date.date).toDate();
+						const shortMonth = currentDate.toLocaleString('en-GB', { month: 'short' });
+						const day = currentDate.getDate();
+						const year = currentDate.getFullYear();
+
+						const shortMonthEl = createElement('span', {
+							className: `clickable-title month${this.hasPeriodicNote(currentDate, 'month') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'month',
+							title: 'Click to open monthly note'
+						}, shortMonth);
+
+						const yearEl = createElement('span', {
+							className: `clickable-title year${this.hasPeriodicNote(currentDate, 'year') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'year',
+							title: 'Click to open yearly note'
+						}, year);
+
 						const endDate = new Date(currentDate);
 						endDate.setDate(currentDate.getDate() + 6);
 						const endDay = endDate.getDate();
-						return createElement('span', {}, 
-							shortMonth, ' ', day, ' – ', endDay, ', ', yearEl
+
+						const weekEl = createElement('span', {
+							className: `clickable-title week${this.hasPeriodicNote(currentDate, 'week') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'week',
+							title: 'Click to open weekly note'
+						}, `${day}${date.defaultSeparator}${endDay}`);
+
+						return createElement('span', {},
+							shortMonthEl, ' ', weekEl, ', ', yearEl
 						);
 					}
-						
-					case 'timeGridDay':
-						// Day view: "January 1, 2024"
+				},
+				timeGridDay: {
+					titleFormat: (date) => {
+						const currentDate = moment(date.date).toDate();
+						const month = currentDate.toLocaleString('en-GB', { month: 'long' });
+						const day = currentDate.getDate();
+						const year = currentDate.getFullYear();
+
+						const monthEl = createElement('span', {
+							className: `clickable-title month${this.hasPeriodicNote(currentDate, 'month') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'month',
+							title: 'Click to open monthly note'
+						}, month);
+
+						const yearEl = createElement('span', {
+							className: `clickable-title year${this.hasPeriodicNote(currentDate, 'year') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'year',
+							title: 'Click to open yearly note'
+						}, year);
+
+						const dayEl = createElement('span', {
+							className: `clickable-title day${this.hasPeriodicNote(currentDate, 'day') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'day',
+							title: 'Click to open daily note'
+						}, day);
+
 						return createElement('span', {}, 
-							monthEl, ' ', day, ', ', yearEl
+							monthEl, ' ', dayEl, ', ', yearEl
 						);
-						
-					default:
-						return createElement('span', {}, monthEl, ' ', yearEl);
-				}
+					}
+				},
+				listWeek: {
+					titleFormat: (date) => {
+						const currentDate = moment(date.date).toDate();
+						const shortMonth = currentDate.toLocaleString('en-GB', { month: 'short' });
+						const day = currentDate.getDate();
+						const year = currentDate.getFullYear();
+
+						const shortMonthEl = createElement('span', {
+							className: `clickable-title month${this.hasPeriodicNote(currentDate, 'month') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'month',
+							title: 'Click to open monthly note'
+						}, shortMonth);
+
+						const yearEl = createElement('span', {
+							className: `clickable-title year${this.hasPeriodicNote(currentDate, 'year') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'year',
+							title: 'Click to open yearly note'
+						}, year);
+
+						const endDate = new Date(currentDate);
+						endDate.setDate(currentDate.getDate() + 6);
+						const endDay = endDate.getDate();
+
+						const weekEl = createElement('span', {
+							className: `clickable-title week${this.hasPeriodicNote(currentDate, 'week') ? ' has-periodic-note' : ''}`,
+							'data-date': currentDate.toISOString(),
+							'data-type': 'week',
+							title: 'Click to open weekly note'
+						}, `${day}${date.defaultSeparator}${endDay}`);
+
+						return createElement('span', {},
+							shortMonthEl, ' ', weekEl, ', ', yearEl
+						);
+					}
+				},
 			},
 			datesSet: () => {
 				// Add click handlers to the title elements
@@ -173,6 +253,10 @@ export class CalendarView {
 							this.openMonthlyNote(date);
 						} else if (type === 'year') {
 							this.openYearlyNote(date);
+						} else if (type === 'week') {
+							this.openWeeklyNote(date);
+						} else if (type === 'day') {
+							this.openDailyNote(date);
 						}
 					});
 				});
