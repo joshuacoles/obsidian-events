@@ -5,6 +5,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import {App, TFile, Notice, moment} from 'obsidian';
 import type {Moment} from 'moment';
+import {createElement} from "@fullcalendar/core/preact";
 
 type Granularity = "day" | "week" | "month" | "quarter" | "year";
 
@@ -171,10 +172,10 @@ export class CalendarView {
 			firstDay: 1,      // Week starts on Monday
 			weekNumbers: true, // Show week numbers
 			weekNumberFormat: {week: 'numeric'},
-			// datesSet: () => {
-			// 	// Update title click handlers whenever the view changes
-			// 	this.setupTitleClickHandlers();
-			// },
+			titleFormat: (x) => {
+				const type = this.calendar?.view.type;
+				return createElement('span', {}, 'Bob')
+			},
 			weekNumberDidMount: (info) => {
 				const weekNumberEl = info.el;
 				weekNumberEl.setAttribute('title', 'Click to open weekly note');
@@ -239,7 +240,7 @@ export class CalendarView {
 		});
 
 		this.calendar.render();
-		this.setupTitleClickHandlers();
+		// this.setupTitleClickHandlers();
 	}
 
 	private getInitialView() {
