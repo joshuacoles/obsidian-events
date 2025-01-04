@@ -40,7 +40,8 @@ export class CalendarView {
 			allDay: event.allDay,
 			extendedProps: {
 				sourcePath: event.sourcePath
-			}
+			},
+			url: event.sourcePath,
 		}));
 	}
 
@@ -309,8 +310,30 @@ export class CalendarView {
 				}
 			},
 			eventDidMount: (info) => {
-				if (info.event.extendedProps.sourcePath) {
+				const sourcePath = info.event.extendedProps.sourcePath;
+				if (sourcePath) {
 					info.el.style.cursor = 'pointer';
+					
+					// Get the title element
+					const titleEl = info.el.querySelector('.fc-event-title');
+					if (titleEl) {
+						// Create the link element with Obsidian-specific attributes
+						const linkEl = document.createElement('a');
+						linkEl.className = 'internal-link data-link-icon data-link-icon-after data-link-text';
+						linkEl.href = sourcePath;
+						linkEl.setAttribute('data-href', sourcePath);
+						linkEl.setAttribute('data-tooltip-position', 'top');
+						linkEl.setAttribute('aria-label', sourcePath);
+						linkEl.setAttribute('data-link-path', sourcePath);
+						linkEl.style.setProperty('--data-link-path', sourcePath);
+						linkEl.target = '_blank';
+						linkEl.rel = 'noopener nofollow';
+						
+						// Move the text content to the link
+						linkEl.textContent = info.event.title;
+						titleEl.textContent = '';
+						titleEl.appendChild(linkEl);
+					}
 				}
 			},
 			dayCellDidMount: (info) => {
