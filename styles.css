@@ -124,3 +124,25 @@ If your plugin does not need CSS, delete this file.
 .calendar-container .fc-col-header-cell.has-periodic-note .fc-col-header-cell-cushion:hover {
     opacity: 0.8;
 }
+
+/* Clickable title styling */
+.calendar-container .clickable-title {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease-in-out, opacity 0.15s ease-in-out;
+}
+
+.calendar-container .clickable-title:hover {
+    background-color: var(--interactive-hover);
+}
+
+.calendar-container .clickable-title.has-periodic-note {
+    background-color: var(--interactive-accent) !important;
+    color: var(--text-on-accent) !important;
+    opacity: 0.5;
+}
+
+.calendar-container .clickable-title.has-periodic-note:hover {
+    opacity: 0.8;
+}
