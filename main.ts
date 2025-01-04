@@ -5,12 +5,12 @@ import { CalendarView } from './src/calendarView';
 import {AddEventModal} from './src/addEventModal';
 
 interface CalendarPluginSettings {
-	defaultView: 'month' | 'week' | 'day';
+	defaultView: string;
 	calendarFolder: string;
 }
 
 const DEFAULT_SETTINGS: CalendarPluginSettings = {
-	defaultView: 'month',
+	defaultView: 'dayGridMonth',
 	calendarFolder: 'Calendar'
 }
 

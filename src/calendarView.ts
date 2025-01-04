@@ -117,7 +117,7 @@ export class CalendarView {
 		// Initialize FullCalendar
 		this.calendar = new Calendar(calendarEl, {
 			plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
-			initialView: this.getInitialView(),
+			initialView: this.settings.view,
 			headerToolbar: this.settings.showToolbar ? {
 				left: 'prev,next today',
 				center: 'title',
@@ -338,20 +338,5 @@ export class CalendarView {
 		anchor.style.setProperty('--data-link-path', path);
 		anchor.target = '_blank';
 		anchor.rel = 'noopener nofollow';
-	}
-
-	private getInitialView() {
-		switch (this.settings.view) {
-			case 'month':
-				return 'dayGridMonth';
-			case 'week':
-				return 'timeGridWeek';
-			case 'day':
-				return 'timeGridDay';
-			case "listDay":
-				return "listDay";
-			default:
-				return 'dayGridMonth';
-		}
 	}
 }
