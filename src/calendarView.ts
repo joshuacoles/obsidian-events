@@ -122,7 +122,7 @@ export class CalendarView {
 				right: this.settings.views.length > 1 ? this.settings.views.map(x => this.viewType(...x)).filter(Boolean).join(',') : undefined,
 			} : false,
 			events: this.convertToFullCalendarEvents(),
-			initialDate: this.settings.date ? new Date(this.settings.date) : new Date(),
+			initialDate: this.settings.date,
 			height: 'auto',
 			locale: 'en-GB',
 			firstDay: 1,
