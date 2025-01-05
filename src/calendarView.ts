@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import {App, TFile, Notice, moment} from 'obsidian';
-import {createElement} from '@fullcalendar/core/preact';
+import {createElement, type VNode} from '@fullcalendar/core/preact';
 import * as dFns from 'date-fns';
 import {Granularity, PeriodicNotesPlugin} from './periodicNotes';
 import CalendarPlugin from "./main";
@@ -17,16 +17,20 @@ export class CalendarView {
 	private calendar: Calendar | null = null;
 
 	private readonly plugin: CalendarPlugin;
-	private readonly app: App;
-	private readonly periodicNotes: PeriodicNotesPlugin | undefined;
 
 	constructor(plugin: CalendarPlugin, container: HTMLElement, events: CalendarEvent[], settings: CalendarBlockSettings) {
 		this.plugin = plugin;
-		this.app = plugin.app;
-		this.periodicNotes = plugin.periodicNotes;
 		this.container = container;
 		this.events = events;
 		this.settings = settings;
+	}
+
+	private get periodicNotes(): PeriodicNotesPlugin | undefined {
+		return this.plugin.periodicNotes;
+	}
+
+	private get app(): App {
+		return this.plugin.app;
 	}
 
 	private convertToFullCalendarEvents() {
@@ -74,7 +78,10 @@ export class CalendarView {
 		return this.periodicNotes.getPeriodicNote(granularity, moment(date)) != null;
 	}
 
-	private createHoverableLink(path: string, text: string) {
+	/**
+	 * Creates an obsidian internal link which supports page-preview and hover.
+	 * */
+	private createObsidianLink(path: string, text: string): VNode<any> {
 		return createElement('a', {
 			className: 'internal-link data-link-icon data-link-icon-after data-link-text',
 			href: path,
@@ -88,21 +95,43 @@ export class CalendarView {
 		}, text);
 	}
 
-	private createClickableTitle(text: string, date: Date, type: Granularity, hasNote: boolean) {
-		if (hasNote) {
-			const file = this.getPeriodicNote(type, date)
-			if (file) {
-				return this.createHoverableLink(file.path, text);
-			}
+	/**
+	 * Enhances an existing link to be an Obsidian internal link with support for page-preview and hover.
+	 * */
+	private enhanceLink(anchor: HTMLAnchorElement, path: string, label: string | undefined = undefined): void {
+		anchor.className += ' internal-link data-link-icon data-link-icon-after data-link-text';
+		anchor.setAttribute('data-href', path);
+		anchor.setAttribute('data-tooltip-position', 'top');
+		anchor.setAttribute('aria-label', label ?? path);
+		anchor.setAttribute('data-link-path', path);
+		anchor.style.setProperty('--data-link-path', path);
+		anchor.target = '_blank';
+		anchor.rel = 'noopener nofollow';
+	}
+
+	private createClickableTitle(text: string, date: Date, type: Granularity) {
+		const file = this.getPeriodicNote(type, date);
+
+		if (file) {
+			return this.createObsidianLink(file.path, text);
 		}
 
 		return createElement('span', {
-			className: `clickable-title ${type}${hasNote ? ' has-periodic-note' : ''}`,
-			'data-date': date.toISOString(),
-			'data-type': type,
+			className: `clickable-title ${type}`,
 			title: `Click to open ${type}ly note`,
 			onClick: () => this.openPeriodicNote(type, date)
 		}, text);
+	}
+
+	private assembleTitle(currentDate: Date, args: (string | [string, Granularity])[]) {
+		return args.map(arg => {
+			if (typeof arg === 'string') {
+				return arg
+			} else {
+				const [format, granularity] = arg;
+				return this.createClickableTitle(dFns.formatDate(currentDate, format), currentDate, granularity)
+			}
+		})
 	}
 
 	render() {
@@ -133,89 +162,55 @@ export class CalendarView {
 					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						const month = currentDate.toLocaleString('en-GB', {month: 'long'});
-						const year = currentDate.getFullYear();
-
-						const hasMonthNote = this.hasPeriodicNote(currentDate, 'month');
-						const hasYearNote = this.hasPeriodicNote(currentDate, 'year');
-
-						const monthEl = this.createClickableTitle(month, currentDate, 'month', hasMonthNote);
-						const yearEl = this.createClickableTitle(year.toString(), currentDate, 'year', hasYearNote);
-
-						return createElement('span', {}, monthEl, ' ', yearEl);
+						return createElement('span', {}, ...this.assembleTitle(currentDate, [
+							['MMMM', 'month'],
+							' ',
+							['yyyy', 'year']
+						]));
 					}
 				},
 				timeGridWeek: {
 					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						const shortMonth = currentDate.toLocaleString('en-GB', {month: 'short'});
-						const day = currentDate.getDate();
-						const year = currentDate.getFullYear();
-
-						const hasMonthNote = this.hasPeriodicNote(currentDate, 'month');
-						const hasYearNote = this.hasPeriodicNote(currentDate, 'year');
-						const hasWeekNote = this.hasPeriodicNote(currentDate, 'week');
-
-						const shortMonthEl = this.createClickableTitle(shortMonth, currentDate, 'month', hasMonthNote);
-						const yearEl = this.createClickableTitle(year.toString(), currentDate, 'year', hasYearNote);
-
 						const endDate = new Date(currentDate);
 						endDate.setDate(currentDate.getDate() + 6);
 						const endDay = endDate.getDate();
-						const weekText = `${day}${date.defaultSeparator}${endDay}`;
-						const weekEl = this.createClickableTitle(weekText, currentDate, 'week', hasWeekNote);
+						const weekText = `${currentDate.getDate()}${date.defaultSeparator}${endDay}`;
 
-						return createElement('span', {},
-							shortMonthEl, ' ', weekEl, ', ', yearEl
-						);
+						return createElement('span', {}, ...this.assembleTitle(currentDate, [
+							['MMM', 'month'],
+							' ',
+							[weekText, 'week'],
+							', ',
+							['yyyy', 'year']
+						]));
 					}
 				},
 				timeGridDay: {
 					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						const month = currentDate.toLocaleString('en-GB', {month: 'long'});
-						const day = currentDate.getDate();
-						const year = currentDate.getFullYear();
-
-						const hasMonthNote = this.hasPeriodicNote(currentDate, 'month');
-						const hasYearNote = this.hasPeriodicNote(currentDate, 'year');
-						const hasDayNote = this.hasPeriodicNote(currentDate, 'day');
-
-						const monthEl = this.createClickableTitle(month, currentDate, 'month', hasMonthNote);
-						const yearEl = this.createClickableTitle(year.toString(), currentDate, 'year', hasYearNote);
-						const dayEl = this.createClickableTitle(day.toString(), currentDate, 'day', hasDayNote);
-
-						return createElement('span', {},
-							monthEl, ' ', dayEl, ', ', yearEl
-						);
+						return createElement('span', {}, ...this.assembleTitle(currentDate, [
+							['MMMM', 'month'],
+							' ',
+							['dd', 'day'],
+							' ',
+							['yyyy', 'year']
+						]));
 					}
 				},
 				listWeek: {
 					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						const shortMonth = currentDate.toLocaleString('en-GB', {month: 'short'});
-						const day = currentDate.getDate();
-						const year = currentDate.getFullYear();
-
-						const hasMonthNote = this.hasPeriodicNote(currentDate, 'month');
-						const hasYearNote = this.hasPeriodicNote(currentDate, 'year');
-						const hasWeekNote = this.hasPeriodicNote(currentDate, 'week');
-
-						const shortMonthEl = this.createClickableTitle(shortMonth, currentDate, 'month', hasMonthNote);
-						const yearEl = this.createClickableTitle(year.toString(), currentDate, 'year', hasYearNote);
-
-						const endDate = new Date(currentDate);
-						endDate.setDate(currentDate.getDate() + 6);
-						const endDay = endDate.getDate();
-						const weekText = `${day}${date.defaultSeparator}${endDay}`;
-						const weekEl = this.createClickableTitle(weekText, currentDate, 'week', hasWeekNote);
-
-						return createElement('span', {},
-							shortMonthEl, ' ', weekEl, ', ', yearEl
-						);
+						return createElement('span', {}, ...this.assembleTitle(currentDate, [
+							['MMMM', 'month'],
+							' ',
+							['dd', 'day'],
+							' ',
+							['yyyy', 'year']
+						]));
 					}
 				},
 			},
@@ -331,17 +326,6 @@ export class CalendarView {
 		});
 
 		this.calendar.render();
-	}
-
-	private enhanceLink(anchor: HTMLAnchorElement, path: string, label: string | undefined = undefined) {
-		anchor.className += ' internal-link data-link-icon data-link-icon-after data-link-text';
-		anchor.setAttribute('data-href', path);
-		anchor.setAttribute('data-tooltip-position', 'top');
-		anchor.setAttribute('aria-label', label ?? path);
-		anchor.setAttribute('data-link-path', path);
-		anchor.style.setProperty('--data-link-path', path);
-		anchor.target = '_blank';
-		anchor.rel = 'noopener nofollow';
 	}
 
 	private viewType(period: Granularity, kind: 'list' | 'timeGrid' | 'dayGrid') {
