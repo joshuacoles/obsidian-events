@@ -2,26 +2,26 @@ import {CalendarEvent, CalendarBlockSettings} from './types';
 import {Calendar} from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import iCalendarPlugin from './icalendar';
 import listPlugin from '@fullcalendar/list';
 import {App, TFile, Notice, moment} from 'obsidian';
 import {createElement, type VNode} from '@fullcalendar/core/preact';
 import * as dFns from 'date-fns';
 import {Granularity, PeriodicNotesPlugin} from './periodicNotes';
 import CalendarPlugin from "./main";
-import { CreateEventModal } from './CreateEventModal';
+import {CreateEventModal} from './CreateEventModal';
+import CalendarFolderSource from "./eventSources/calendarFolder";
 
 export class CalendarView {
 	private container: HTMLElement;
-	private events: CalendarEvent[];
 	private settings: CalendarBlockSettings;
 	private calendar: Calendar | null = null;
 
 	private readonly plugin: CalendarPlugin;
 
-	constructor(plugin: CalendarPlugin, container: HTMLElement, events: CalendarEvent[], settings: CalendarBlockSettings) {
+	constructor(plugin: CalendarPlugin, container: HTMLElement, settings: CalendarBlockSettings) {
 		this.plugin = plugin;
 		this.container = container;
-		this.events = events;
 		this.settings = settings;
 	}
 
@@ -31,20 +31,6 @@ export class CalendarView {
 
 	private get app(): App {
 		return this.plugin.app;
-	}
-
-	private convertToFullCalendarEvents() {
-		return this.events.map(event => ({
-			title: event.title,
-			start: event.startDate,
-			end: event.endDate,
-			description: event.description,
-			allDay: event.allDay,
-			extendedProps: {
-				sourcePath: event.sourcePath
-			},
-			url: event.sourcePath?.startsWith("ics") ? undefined : event.sourcePath,
-		}));
 	}
 
 	private async openPeriodicNote(granularity: Granularity, date: Date) {
@@ -68,14 +54,6 @@ export class CalendarView {
 
 		// @ts-ignore Version issues mean this has an error
 		return this.periodicNotes.getPeriodicNote(granularity, moment(date));
-	}
-
-	private hasPeriodicNote(date: Date, granularity: Granularity): boolean {
-		if (!this.periodicNotes) {
-			return false;
-		}
-
-		return this.periodicNotes.getPeriodicNote(granularity, moment(date)) != null;
 	}
 
 	/**
@@ -142,15 +120,25 @@ export class CalendarView {
 		const calendarEl = this.container.createEl('div', {cls: 'calendar-container'});
 
 		// Initialize FullCalendar
+		let eventSources = [
+			new CalendarFolderSource(this.plugin.settings.calendarFolder, this.app),
+			...this.plugin.settings.icsUrls.map(url => ({
+				url,
+				format: 'ics',
+			}))
+		];
+
+		console.log(eventSources);
+
 		this.calendar = new Calendar(calendarEl, {
-			plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
+			plugins: [dayGridPlugin, timeGridPlugin, listPlugin, iCalendarPlugin],
 			initialView: this.viewType(...this.settings.views[0]),
 			headerToolbar: (!this.settings.fixed || this.settings.views.length > 1 || this.settings.showTitle) ? {
 				left: this.settings.fixed ? undefined : 'prev,next today',
 				center: this.settings.showTitle ? 'title' : undefined,
 				right: this.settings.views.length > 1 ? this.settings.views.map(x => this.viewType(...x)).filter(Boolean).join(',') : '',
 			} : false,
-			events: this.convertToFullCalendarEvents(),
+			eventSources,
 			initialDate: this.settings.date,
 			height: 'auto',
 			locale: 'en-GB',
@@ -301,7 +289,7 @@ export class CalendarView {
 			},
 			eventDidMount: (info) => {
 				const sourcePath = info.event.extendedProps.sourcePath;
-				if (!info.event.extendedProps.sourcePath.startsWith("ics")) {
+				if (sourcePath) {
 					this.enhanceLink(info.el as HTMLAnchorElement, sourcePath);
 				}
 			},

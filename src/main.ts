@@ -65,7 +65,7 @@ export default class CalendarPlugin extends Plugin {
 				];
 
 				// Render the calendar
-				const calendar = new CalendarView(this, el, allEvents, blockSettings);
+				const calendar = new CalendarView(this, el, blockSettings);
 				calendar.render();
 			} catch (error) {
 				console.error('Error rendering calendar:', error);
