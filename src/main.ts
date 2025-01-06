@@ -41,7 +41,7 @@ export default class CalendarPlugin extends Plugin {
 				const blockSettings: CalendarBlockSettings = periodic ? {
 					views: (views ?? ['dayGrid']).map((x: CalendarViewKind) => [periodic.granularity, x]),
 					fixed: true,
-					date: periodic.date,
+					date: periodic.date.toDate(),
 					showTitle: false,
 					...rest
 				} : {
