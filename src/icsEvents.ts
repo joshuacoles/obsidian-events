@@ -1,4 +1,3 @@
-// @ts-ignore
 import ICAL from 'ical.js';
 import { CalendarEvent } from './types';
 import {App, Notice, TFile, Vault} from 'obsidian';
