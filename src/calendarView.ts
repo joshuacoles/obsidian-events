@@ -148,7 +148,7 @@ export class CalendarView {
 			headerToolbar: (!this.settings.fixed || this.settings.views.length > 1 || this.settings.showTitle) ? {
 				left: this.settings.fixed ? undefined : 'prev,next today',
 				center: this.settings.showTitle ? 'title' : undefined,
-				right: this.settings.views.length > 1 ? this.settings.views.map(x => this.viewType(...x)).filter(Boolean).join(',') : undefined,
+				right: this.settings.views.length > 1 ? this.settings.views.map(x => this.viewType(...x)).filter(Boolean).join(',') : '',
 			} : false,
 			events: this.convertToFullCalendarEvents(),
 			initialDate: this.settings.date,
