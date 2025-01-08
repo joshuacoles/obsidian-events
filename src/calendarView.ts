@@ -1,15 +1,15 @@
-import {CalendarEvent, CalendarBlockSettings} from './types';
-import {Calendar} from '@fullcalendar/core';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import iCalendarPlugin from './icalendar';
-import listPlugin from '@fullcalendar/list';
-import {App, TFile, Notice, moment} from 'obsidian';
-import {createElement, type VNode} from '@fullcalendar/core/preact';
-import * as dFns from 'date-fns';
-import {Granularity, PeriodicNotesPlugin} from './periodicNotes';
+import { CalendarEvent, CalendarBlockSettings } from "./types";
+import { Calendar } from "@fullcalendar/core";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import iCalendarPlugin from "./icalendar";
+import listPlugin from "@fullcalendar/list";
+import { App, TFile, Notice, moment } from "obsidian";
+import { createElement, type VNode } from "@fullcalendar/core/preact";
+import * as dFns from "date-fns";
+import { Granularity, PeriodicNotesPlugin } from "./periodicNotes";
 import CalendarPlugin from "./main";
-import {CreateEventModal} from './CreateEventModal';
+import { CreateEventModal } from "./CreateEventModal";
 import CalendarFolderSource from "./eventSources/calendarFolder";
 
 export class CalendarView {
@@ -35,7 +35,7 @@ export class CalendarView {
 
 	private async openPeriodicNote(granularity: Granularity, date: Date) {
 		if (!this.periodicNotes) {
-			new Notice('Periodic Notes plugin is not installed or enabled');
+			new Notice("Periodic Notes plugin is not installed or enabled");
 			return;
 		}
 
@@ -60,16 +60,16 @@ export class CalendarView {
 	 * Creates an obsidian internal link which supports page-preview and hover.
 	 * */
 	private createObsidianLink(path: string, text: string): VNode<any> {
-		return createElement('a', {
-			className: 'internal-link data-link-icon data-link-icon-after data-link-text',
+		return createElement("a", {
+			className: "internal-link data-link-icon data-link-icon-after data-link-text",
 			href: path,
-			'data-href': path,
-			'data-tooltip-position': 'top',
-			'aria-label': path,
-			'data-link-path': path,
-			style: {'--data-link-path': path},
-			target: '_blank',
-			rel: 'noopener nofollow',
+			"data-href": path,
+			"data-tooltip-position": "top",
+			"aria-label": path,
+			"data-link-path": path,
+			style: { "--data-link-path": path },
+			target: "_blank",
+			rel: "noopener nofollow"
 		}, text);
 	}
 
@@ -77,14 +77,14 @@ export class CalendarView {
 	 * Enhances an existing link to be an Obsidian internal link with support for page-preview and hover.
 	 * */
 	private enhanceLink(anchor: HTMLAnchorElement, path: string, label: string | undefined = undefined): void {
-		anchor.className += ' internal-link data-link-icon data-link-icon-after data-link-text';
-		anchor.setAttribute('data-href', path);
-		anchor.setAttribute('data-tooltip-position', 'top');
-		anchor.setAttribute('aria-label', label ?? path);
-		anchor.setAttribute('data-link-path', path);
-		anchor.style.setProperty('--data-link-path', path);
-		anchor.target = '_blank';
-		anchor.rel = 'noopener nofollow';
+		anchor.className += " internal-link data-link-icon data-link-icon-after data-link-text";
+		anchor.setAttribute("data-href", path);
+		anchor.setAttribute("data-tooltip-position", "top");
+		anchor.setAttribute("aria-label", label ?? path);
+		anchor.setAttribute("data-link-path", path);
+		anchor.style.setProperty("--data-link-path", path);
+		anchor.target = "_blank";
+		anchor.rel = "noopener nofollow";
 	}
 
 	private createClickableTitle(text: string, date: Date, type: Granularity) {
@@ -94,7 +94,7 @@ export class CalendarView {
 			return this.createObsidianLink(file.path, text);
 		}
 
-		return createElement('span', {
+		return createElement("span", {
 			className: `clickable-title ${type}`,
 			title: `Click to open ${type}ly note`,
 			onClick: () => this.openPeriodicNote(type, date)
@@ -103,13 +103,13 @@ export class CalendarView {
 
 	private assembleTitle(currentDate: Date, args: (string | [string, Granularity])[]) {
 		return args.map(arg => {
-			if (typeof arg === 'string') {
-				return arg
+			if (typeof arg === "string") {
+				return arg;
 			} else {
 				const [format, granularity] = arg;
-				return this.createClickableTitle(dFns.formatDate(currentDate, format), currentDate, granularity)
+				return this.createClickableTitle(dFns.formatDate(currentDate, format), currentDate, granularity);
 			}
-		})
+		});
 	}
 
 	render() {
@@ -117,14 +117,14 @@ export class CalendarView {
 		this.container.empty();
 
 		// Create calendar container
-		const calendarEl = this.container.createEl('div', {cls: 'calendar-container'});
+		const calendarEl = this.container.createEl("div", { cls: "calendar-container" });
 
 		// Initialize FullCalendar
 		let eventSources = [
 			new CalendarFolderSource(this.plugin.settings.calendarFolder, this.app),
 			...this.plugin.settings.icsUrls.map(url => ({
 				url,
-				format: 'ics',
+				format: "ics"
 			}))
 		];
 
@@ -134,26 +134,26 @@ export class CalendarView {
 			plugins: [dayGridPlugin, timeGridPlugin, listPlugin, iCalendarPlugin],
 			initialView: this.viewType(...this.settings.views[0]),
 			headerToolbar: (!this.settings.fixed || this.settings.views.length > 1 || this.settings.showTitle) ? {
-				left: this.settings.fixed ? undefined : 'prev,next today',
-				center: this.settings.showTitle ? 'title' : undefined,
-				right: this.settings.views.length > 1 ? this.settings.views.map(x => this.viewType(...x)).filter(Boolean).join(',') : '',
+				left: this.settings.fixed ? undefined : "prev,next today",
+				center: this.settings.showTitle ? "title" : undefined,
+				right: this.settings.views.length > 1 ? this.settings.views.map(x => this.viewType(...x)).filter(Boolean).join(",") : ""
 			} : false,
 			eventSources,
 			initialDate: this.settings.date,
-			height: 'auto',
-			locale: 'en-GB',
+			height: "auto",
+			locale: "en-GB",
 			firstDay: 1,
 			weekNumbers: true,
-			weekNumberFormat: {week: 'numeric'},
+			weekNumberFormat: { week: "numeric" },
 			views: {
 				dayGridMonth: {
 					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						return createElement('span', {}, ...this.assembleTitle(currentDate, [
-							['MMMM', 'month'],
-							' ',
-							['yyyy', 'year']
+						return createElement("span", {}, ...this.assembleTitle(currentDate, [
+							["MMMM", "month"],
+							" ",
+							["yyyy", "year"]
 						]));
 					}
 				},
@@ -166,12 +166,12 @@ export class CalendarView {
 						const endDay = endDate.getDate();
 						const weekText = `${currentDate.getDate()}${date.defaultSeparator}${endDay}`;
 
-						return createElement('span', {}, ...this.assembleTitle(currentDate, [
-							['MMM', 'month'],
-							' ',
-							[weekText, 'week'],
-							', ',
-							['yyyy', 'year']
+						return createElement("span", {}, ...this.assembleTitle(currentDate, [
+							["MMM", "month"],
+							" ",
+							[weekText, "week"],
+							", ",
+							["yyyy", "year"]
 						]));
 					}
 				},
@@ -179,12 +179,12 @@ export class CalendarView {
 					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						return createElement('span', {}, ...this.assembleTitle(currentDate, [
-							['MMMM', 'month'],
-							' ',
-							['dd', 'day'],
-							' ',
-							['yyyy', 'year']
+						return createElement("span", {}, ...this.assembleTitle(currentDate, [
+							["MMMM", "month"],
+							" ",
+							["dd", "day"],
+							" ",
+							["yyyy", "year"]
 						]));
 					}
 				},
@@ -192,34 +192,34 @@ export class CalendarView {
 					// @ts-ignore
 					titleFormat: (date) => {
 						const currentDate = moment(date.date).toDate();
-						return createElement('span', {}, ...this.assembleTitle(currentDate, [
-							['MMMM', 'month'],
-							' ',
-							['dd', 'day'],
-							' ',
-							['yyyy', 'year']
+						return createElement("span", {}, ...this.assembleTitle(currentDate, [
+							["MMMM", "month"],
+							" ",
+							["dd", "day"],
+							" ",
+							["yyyy", "year"]
 						]));
 					}
-				},
+				}
 			},
 			weekNumberDidMount: (info) => {
 				const weekNumberEl = info.el;
-				const periodicNote = this.getPeriodicNote('week', info.date);
+				const periodicNote = this.getPeriodicNote("week", info.date);
 
 				if (periodicNote && weekNumberEl instanceof HTMLAnchorElement) {
 					this.enhanceLink(
 						weekNumberEl,
 						periodicNote.path,
 						periodicNote.basename
-					)
+					);
 				} else {
-					weekNumberEl.setAttribute('title', 'Click to open weekly note');
-					weekNumberEl.addEventListener('click', () => this.openPeriodicNote('week', info.date));
+					weekNumberEl.setAttribute("title", "Click to open weekly note");
+					weekNumberEl.addEventListener("click", () => this.openPeriodicNote("week", info.date));
 				}
 			},
 			dayHeaderDidMount: (info) => {
 				const headerEl = info.el;
-				const link = headerEl.querySelector('a');
+				const link = headerEl.querySelector("a");
 
 				// When in the month grid full calendar will pass in epoch + n days to render the top row, these should
 				// not be linked to notes
@@ -235,35 +235,35 @@ export class CalendarView {
 					return;
 				}
 
-				const periodicNote = this.getPeriodicNote('day', info.date);
+				const periodicNote = this.getPeriodicNote("day", info.date);
 
 				if (periodicNote && link) {
 					this.enhanceLink(
 						link,
 						periodicNote.path,
 						periodicNote.basename
-					)
+					);
 				} else {
-					headerEl.style.cursor = 'pointer';
-					headerEl.setAttribute('title', 'Click to open daily note');
+					headerEl.style.cursor = "pointer";
+					headerEl.setAttribute("title", "Click to open daily note");
 
-					headerEl.addEventListener('click', () => {
-						this.openPeriodicNote('day', info.date)
+					headerEl.addEventListener("click", () => {
+						this.openPeriodicNote("day", info.date);
 					});
 				}
 			},
 			buttonText: {
-				today: 'Today',
-				month: 'Month',
-				week: 'Week',
-				day: 'Day',
-				list: 'List'
+				today: "Today",
+				month: "Month",
+				week: "Week",
+				day: "Day",
+				list: "List"
 			},
 			eventClick: (info) => {
 				const sourcePath = info.event.extendedProps.sourcePath;
 				if (!sourcePath) return;
 
-				if (sourcePath.startsWith('ics://')) {
+				if (sourcePath.startsWith("ics://")) {
 					// For ICS events, show the create file modal
 					const event: CalendarEvent = {
 						title: info.event.title,
@@ -294,44 +294,44 @@ export class CalendarView {
 				}
 			},
 			dayCellDidMount: (info) => {
-				const dayNumberEl = info.el.querySelector('.fc-daygrid-day-number') as HTMLAnchorElement;
+				const dayNumberEl = info.el.querySelector(".fc-daygrid-day-number") as HTMLAnchorElement;
 				if (dayNumberEl) {
-					const file = this.getPeriodicNote('day', info.date);
+					const file = this.getPeriodicNote("day", info.date);
 
 					if (file) {
 						// Replace the day number with a hoverable link
-						const linkEl = dayNumberEl
+						const linkEl = dayNumberEl;
 						linkEl.href = file.path;
 						this.enhanceLink(linkEl, file.path, file.basename);
 					} else {
-						dayNumberEl.setAttribute('title', 'Click to open daily note');
-						dayNumberEl.style.cursor = 'pointer';
-						dayNumberEl.addEventListener('click', () => this.openPeriodicNote('day', info.date));
+						dayNumberEl.setAttribute("title", "Click to open daily note");
+						dayNumberEl.style.cursor = "pointer";
+						dayNumberEl.addEventListener("click", () => this.openPeriodicNote("day", info.date));
 					}
 				}
 			},
-			themeSystem: 'standard'
+			themeSystem: "standard"
 		});
 
 		this.calendar.render();
 	}
 
-	private viewType(period: Granularity, kind: 'list' | 'timeGrid' | 'dayGrid') {
-		const options: Record<'list' | 'timeGrid' | 'dayGrid', Partial<Record<Granularity, string>>> = {
+	private viewType(period: Granularity, kind: "list" | "timeGrid" | "dayGrid") {
+		const options: Record<"list" | "timeGrid" | "dayGrid", Partial<Record<Granularity, string>>> = {
 			dayGrid: {
-				day: 'dayGridDay',
-				month: 'dayGridMonth',
-				year: 'dayGridYear'
+				day: "dayGridDay",
+				month: "dayGridMonth",
+				year: "dayGridYear"
 			},
 			timeGrid: {
-				day: 'timeGridDay',
-				week: 'timeGridWeek'
+				day: "timeGridDay",
+				week: "timeGridWeek"
 			},
 			list: {
-				day: 'listDay',
-				week: 'listWeek',
-				month: 'listMonth',
-				year: 'listYear'
+				day: "listDay",
+				week: "listWeek",
+				month: "listMonth",
+				year: "listYear"
 			}
 		};
 

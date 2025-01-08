@@ -1,6 +1,6 @@
-import { globalPlugins } from '@fullcalendar/core'
-import plugin from './index.js'
+import { globalPlugins } from "@fullcalendar/core";
+import plugin from "./index.js";
 
-globalPlugins.push(plugin)
+globalPlugins.push(plugin);
 
-export { plugin as default }
+export { plugin as default };

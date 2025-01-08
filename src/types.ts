@@ -1,5 +1,5 @@
-import {z} from "zod";
-import {Granularity} from "./periodicNotes";
+import { z } from "zod";
+import { Granularity } from "./periodicNotes";
 
 export interface CalendarEvent {
 	title: string;
@@ -10,20 +10,20 @@ export interface CalendarEvent {
 	allDay: boolean;      // Whether this is an all-day event
 }
 
-export type CalendarViewKind = 'list' | 'dayGrid' | 'timeGrid';
+export type CalendarViewKind = "list" | "dayGrid" | "timeGrid";
 
 export const calendarBlockOptions =
 	// For a periodic note
 	z.object({
 		fixed: z.boolean(),
-		views: z.array(z.union([z.literal('list'), z.literal('dayGrid'), z.literal('timeGrid')]))
+		views: z.array(z.union([z.literal("list"), z.literal("dayGrid"), z.literal("timeGrid")]))
 	});
 
 export interface CalendarBlockSettings {
 	fixed: boolean;
 	date: Date;
 	showTitle: boolean;
-	views: [Granularity, CalendarViewKind][]
+	views: [Granularity, CalendarViewKind][];
 }
 
 export interface EventFileFormat {
