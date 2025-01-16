@@ -1,11 +1,11 @@
 {
-	"id": "obsidian-events",
-	"name": "Events Calendar",
-	"version": "0.1.2",
-	"minAppVersion": "0.15.0",
-	"description": "A calendar view for your events in Obsidian.",
-	"author": "Joshua Coles",
-	"authorUrl": "https://joshuacoles.me",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+  "id": "obsidian-events",
+  "name": "Events Calendar",
+  "version": "0.1.2",
+  "minAppVersion": "0.15.0",
+  "description": "A calendar view for your events in Obsidian.",
+  "author": "Joshua Coles",
+  "authorUrl": "https://joshuacoles.me",
+  "fundingUrl": "https://obsidian.md/pricing",
+  "isDesktopOnly": false
 }

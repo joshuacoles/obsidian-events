@@ -18,6 +18,10 @@ release:
 		--generate-notes \
 		main.js manifest.json styles.css
 
+	git add package.json manifest.json versions.json
+	git commit -m "chore: release $VERSION"
+	git push
+
 # Bump the semantic version by the specified level (major, minor, or patch)
 bump-version level:
 	#!/usr/bin/env bash
