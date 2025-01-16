@@ -20,7 +20,7 @@
 		"moment": "^2.30.1",
 		"obsidian": "latest",
 		"obsidian-periodic-notes": "git@github.com:liamcain/obsidian-periodic-notes.git",
-		"prettier": "^3.4.2",-
+		"prettier": "^3.4.2",
 		"tslib": "2.4.0",
 		"typescript": "4.7.4"
 	},
