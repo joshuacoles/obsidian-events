@@ -21,6 +21,7 @@ export default class CalendarPlugin extends Plugin {
 	}
 
 	async onload() {
+    console.log("Loading Calendar Plugin");
 		await this.loadSettings();
 
 		// Register the calendar code block processor
@@ -56,8 +57,8 @@ export default class CalendarPlugin extends Plugin {
 
 	async loadSettings() {
 		const privateSettingsPath = `${this.app.vault.configDir}/plugins/obsidian-events/private.json`;
-		const privateSettings = await app.vault.adapter.exists(privateSettingsPath)
-			? JSON.parse(await app.vault.adapter.read(privateSettingsPath))
+		const privateSettings = await this.app.vault.adapter.exists(privateSettingsPath)
+			? JSON.parse(await this.app.vault.adapter.read(privateSettingsPath))
 			: {};
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, privateSettings, await this.loadData());
