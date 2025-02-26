@@ -75,7 +75,7 @@ export default class CalendarPlugin extends Plugin {
 			}
 
 			// Generate filename from date and title
-			const safeTitle = event.title.replace(/[^a-zA-Z0-9]/g, '-');
+			const safeTitle = event.title.replace(/[^a-zA-Z0-9 ]/g, '-');
 			const date = event.allDay ? event.date : event.startTime.split('T')[0];
 			const filename = `${date} ${safeTitle}`;
 
