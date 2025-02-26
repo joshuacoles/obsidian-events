@@ -25,7 +25,6 @@ export class AddEventModal extends Modal {
 		// Title input
 		new Setting(contentEl)
 			.setName("Title")
-			.setDesc("Enter the event title")
 			.addText(text => text
 				.setPlaceholder("Event title")
 				.onChange(value => this.title = value));
@@ -33,7 +32,6 @@ export class AddEventModal extends Modal {
 		// All day toggle
 		new Setting(contentEl)
 			.setName("All Day Event")
-			.setDesc("Toggle for all-day event")
 			.addToggle(toggle => toggle
 				.setValue(this.isAllDay)
 				.onChange(value => {
@@ -44,85 +42,76 @@ export class AddEventModal extends Modal {
 						(el as HTMLElement).style.display = value ? "none" : "block";
 					});
 					if (value) {
-						// For all-day events, set times to start and end of day
 						this.startDate = this.startDate.clone().startOf("day");
 						this.endDate = this.endDate.clone().endOf("day");
 					}
 				}));
 
-		// Start date container
-		const startDateContainer = contentEl.createDiv("date-time-container");
-		startDateContainer.createEl("h3", { text: "Start" });
-
-		// Start date picker
-		new Setting(startDateContainer)
-			.setName("Date")
-			.addText(text => {
-				text.inputEl.type = "date";
-				text.setValue(this.startDate.format("YYYY-MM-DD"));
-				text.onChange(value => {
-					if (this.isAllDay) {
-						this.startDate = moment(value).startOf("day");
-					} else {
-						const time = this.startDate.format("HH:mm");
-						this.startDate = moment(value + " " + time, "YYYY-MM-DD HH:mm");
-					}
-				});
+		// Date and time container
+		const dateTimeContainer = contentEl.createDiv("date-time-container");
+		
+		// Start date and time
+		const startRow = dateTimeContainer.createDiv("date-time-row");
+		startRow.createEl("span", { text: "Start:", cls: "date-time-label" });
+		
+		const startDateEl = startRow.createDiv("date-input");
+		new Setting(startDateEl).addText(text => {
+			text.inputEl.type = "date";
+			text.setValue(this.startDate.format("YYYY-MM-DD"));
+			text.onChange(value => {
+				if (this.isAllDay) {
+					this.startDate = moment(value).startOf("day");
+				} else {
+					const time = this.startDate.format("HH:mm");
+					this.startDate = moment(value + " " + time, "YYYY-MM-DD HH:mm");
+				}
 			});
-
-		// Start time picker
-		new Setting(startDateContainer)
-			.setClass("time-input")
-			.setName("Time")
-			.addText(text => {
-				text.inputEl.type = "time";
-				text.setValue(this.startDate.format("HH:mm"));
-				text.onChange(value => {
-					const date = this.startDate.format("YYYY-MM-DD");
-					this.startDate = moment(date + " " + value, "YYYY-MM-DD HH:mm");
-				});
+		});
+		
+		const startTimeEl = startRow.createDiv("time-input");
+		new Setting(startTimeEl).addText(text => {
+			text.inputEl.type = "time";
+			text.setValue(this.startDate.format("HH:mm"));
+			text.onChange(value => {
+				const date = this.startDate.format("YYYY-MM-DD");
+				this.startDate = moment(date + " " + value, "YYYY-MM-DD HH:mm");
 			});
+		});
 
-		// End date container
-		const endDateContainer = contentEl.createDiv("date-time-container");
-		endDateContainer.createEl("h3", { text: "End" });
-
-		// End date picker
-		new Setting(endDateContainer)
-			.setName("Date")
-			.addText(text => {
-				text.inputEl.type = "date";
-				text.setValue(this.endDate.format("YYYY-MM-DD"));
-				text.onChange(value => {
-					if (this.isAllDay) {
-						this.endDate = moment(value).endOf("day");
-					} else {
-						const time = this.endDate.format("HH:mm");
-						this.endDate = moment(value + " " + time, "YYYY-MM-DD HH:mm");
-					}
-				});
+		// End date and time
+		const endRow = dateTimeContainer.createDiv("date-time-row");
+		endRow.createEl("span", { text: "End:", cls: "date-time-label" });
+		
+		const endDateEl = endRow.createDiv("date-input");
+		new Setting(endDateEl).addText(text => {
+			text.inputEl.type = "date";
+			text.setValue(this.endDate.format("YYYY-MM-DD"));
+			text.onChange(value => {
+				if (this.isAllDay) {
+					this.endDate = moment(value).endOf("day");
+				} else {
+					const time = this.endDate.format("HH:mm");
+					this.endDate = moment(value + " " + time, "YYYY-MM-DD HH:mm");
+				}
 			});
-
-		// End time picker
-		new Setting(endDateContainer)
-			.setClass("time-input")
-			.setName("Time")
-			.addText(text => {
-				text.inputEl.type = "time";
-				text.setValue(this.endDate.format("HH:mm"));
-				text.onChange(value => {
-					const date = this.endDate.format("YYYY-MM-DD");
-					this.endDate = moment(date + " " + value, "YYYY-MM-DD HH:mm");
-				});
+		});
+		
+		const endTimeEl = endRow.createDiv("time-input");
+		new Setting(endTimeEl).addText(text => {
+			text.inputEl.type = "time";
+			text.setValue(this.endDate.format("HH:mm"));
+			text.onChange(value => {
+				const date = this.endDate.format("YYYY-MM-DD");
+				this.endDate = moment(date + " " + value, "YYYY-MM-DD HH:mm");
 			});
+		});
 
 		// Description
 		new Setting(contentEl)
 			.setName("Description")
-			.setDesc("Enter event description (optional)")
 			.addTextArea(text => {
-				text.setPlaceholder("Event description");
-				text.inputEl.rows = 4;
+				text.setPlaceholder("Event description (optional)");
+				text.inputEl.rows = 3;
 				text.onChange(value => this.description = value);
 			});
 
@@ -165,19 +154,36 @@ export class AddEventModal extends Modal {
 					this.close();
 				}));
 
-		// Add some CSS for the date-time containers
+		// Add CSS for the streamlined layout
 		contentEl.createEl("style", {
 			text: `
                 .date-time-container {
-                    border: 1px solid var(--background-modifier-border);
-                    border-radius: 4px;
-                    padding: 10px;
                     margin: 10px 0;
                 }
-                .date-time-container h3 {
-                    margin: 0 0 10px 0;
-                    font-size: 1em;
-                    color: var(--text-muted);
+                .date-time-row {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 8px;
+                    justify-content: space-between;
+                }
+                .date-time-label {
+                    width: 45px;
+                    font-weight: 500;
+                    margin-right: auto;
+                }
+                .date-input, .time-input {
+                    margin-left: 8px;
+                }
+                .date-input .setting-item, .time-input .setting-item {
+                    padding: 0;
+                    border: none;
+                }
+                .date-input .setting-item-control, .time-input .setting-item-control {
+                    padding: 0;
+                }
+                .setting-item {
+                    border-top: 1px solid var(--background-modifier-border);
+                    padding: 12px 0;
                 }
             `
 		});
