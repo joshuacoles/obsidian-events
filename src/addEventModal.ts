@@ -1,5 +1,6 @@
 import { App, Modal, Setting, moment, Notice } from "obsidian";
 import { EventFileFormat } from "./types";
+import * as dFns from 'date-fns';
 
 export class AddEventModal extends Modal {
 	private startDate: moment.Moment;
@@ -12,8 +13,8 @@ export class AddEventModal extends Modal {
 	constructor(app: App, onSubmit: (event: EventFileFormat) => void) {
 		super(app);
 		this.onSubmit = onSubmit;
-		this.startDate = moment().startOf("day");
-		this.endDate = moment().startOf("day");
+		this.startDate = moment(dFns.addHours(dFns.startOfHour(new Date()), 1));
+		this.endDate = moment(dFns.addHours(dFns.startOfHour(new Date()), 2));
 	}
 
 	onOpen() {
